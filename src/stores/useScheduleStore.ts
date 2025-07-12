@@ -1,79 +1,8 @@
-// First, let's check what's in the browser console and fix the store issue
-// Update src/stores/useScheduleStore.ts to fix the auto-scheduling
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
-import { addDays, subDays, isSameDay, startOfDay } from 'date-fns';
-
-// Define interfaces inline to avoid import issues
-interface Course {
-  id: string;
-  name: string;
-  code: string;
-  professor: string;
-  color: string;
-  credits: number;
-  schedule: Array<{
-    dayOfWeek: number;
-    startTime: string;
-    endTime: string;
-    type: 'lecture' | 'lab' | 'tutorial' | 'office-hours';
-  }>;
-}
-
-interface Task {
-  id: string;
-  title: string;
-  type: 'assignment' | 'exam' | 'project' | 'reading' | 'lab';
-  courseId: string;
-  dueDate: Date;
-  complexity: 1 | 2 | 3 | 4 | 5;
-  estimatedHours: number;
-  isHardDeadline: boolean;
-  bufferDays?: number;
-  bufferPercentage?: number;
-  status: 'not-started' | 'in-progress' | 'completed';
-  description?: string;
-  scheduledBlocks: TimeBlock[];
-}
-
-interface TimeBlock {
-  id: string;
-  taskId: string;
-  startTime: Date;
-  endTime: Date;
-  completed: boolean;
-  type?: string;
-  isManual?: boolean;
-}
-
-interface Event {
-  id: string;
-  title: string;
-  type: 'lecture' | 'clinical' | 'lab' | 'exam' | 'simulation' | 'review' | 'deadline';
-  courseId: string;
-  startTime: Date;
-  endTime: Date;
-  location?: string;
-  description?: string;
-  taskId?: string;
-}
-
-interface UserPreferences {
-  studySessionDuration: number;
-  breakDuration: number;
-  maxDailyStudyHours: number;
-  preferredStudyTimes: {
-    morning: boolean;
-    afternoon: boolean;
-    evening: boolean;
-    night: boolean;
-  };
-  daysBeforeExam: number;
-  daysBeforeAssignment: number;
-  daysBeforeProject: number;
-}
+import { Course, Task, TimeBlock, Event, UserPreferences } from '../types';
+import { addDays, startOfDay, endOfDay, isBefore, isAfter, differenceInDays, subDays, isSameDay } from 'date-fns';
 
 interface ScheduleStore {
   courses: Course[];
@@ -82,36 +11,60 @@ interface ScheduleStore {
   events: Event[];
   preferences: UserPreferences;
   
-  // Actions
+  // Course actions
   addCourse: (course: Omit<Course, 'id'>) => void;
   updateCourse: (id: string, course: Partial<Course>) => void;
   deleteCourse: (id: string) => void;
   
-  addTask: (task: Omit<Task, 'id'>) => void;
+  // Task actions
+  addTask: (task: Omit<Task, 'id' | 'scheduledBlocks'>) => void;
   updateTask: (id: string, task: Partial<Task>) => void;
   deleteTask: (id: string) => void;
   
+  // TimeBlock actions
   addTimeBlock: (timeBlock: Omit<TimeBlock, 'id'>) => void;
   updateTimeBlock: (id: string, timeBlock: Partial<TimeBlock>) => void;
   deleteTimeBlock: (id: string) => void;
   
+  // Event actions
   addEvent: (event: Omit<Event, 'id'>) => void;
   updateEvent: (id: string, event: Partial<Event>) => void;
   deleteEvent: (id: string) => void;
   
+  // Scheduling actions
   scheduleTask: (taskId: string) => void;
   rescheduleAllTasks: () => void;
+  
+  // Preferences
   updatePreferences: (preferences: Partial<UserPreferences>) => void;
   
-  // Helper methods
+  // Queries
   getTasksForDate: (date: Date) => Task[];
   getUpcomingTasks: (days: number) => Task[];
   getTasksByCourse: (courseId: string) => Task[];
 }
 
 const defaultPreferences: UserPreferences = {
-  studySessionDuration: 120,
+  studyHours: { start: '09:00', end: '22:00' },
   breakDuration: 15,
+  sessionDuration: 120,
+  complexityDefaults: {
+    assignment: 3,
+    exam: 5,
+    project: 4,
+    reading: 2,
+    lab: 3
+  },
+  bufferDefaults: {
+    soft: 20,
+    hard: 10
+  },
+  energyLevels: {
+    9: 0.7, 10: 0.9, 11: 1.0, 12: 0.8, 13: 0.6,
+    14: 0.7, 15: 0.8, 16: 0.9, 17: 0.8, 18: 0.7,
+    19: 0.8, 20: 0.7, 21: 0.6, 22: 0.5
+  },
+  studySessionDuration: 120,
   maxDailyStudyHours: 8,
   preferredStudyTimes: {
     morning: false,
@@ -122,6 +75,7 @@ const defaultPreferences: UserPreferences = {
   daysBeforeExam: 7,
   daysBeforeAssignment: 3,
   daysBeforeProject: 10,
+  hoursPerWorkDay: 3
 };
 
 export const useScheduleStore = create<ScheduleStore>()(
@@ -133,6 +87,7 @@ export const useScheduleStore = create<ScheduleStore>()(
       events: [],
       preferences: defaultPreferences,
       
+      // Course actions
       addCourse: (course) => set((state) => ({
         courses: [...state.courses, { ...course, id: uuidv4() }],
       })),
@@ -147,63 +102,56 @@ export const useScheduleStore = create<ScheduleStore>()(
         events: state.events.filter((e) => e.courseId !== id),
       })),
       
+      // Task actions
       addTask: (taskData) => {
         const taskId = uuidv4();
         const state = get();
         
-        // Set buffer days based on task type
-        let bufferDays = 3;
+        // Determine buffer days based on task type and preferences
+        let bufferDays = 3; // default
         if (taskData.type === 'exam') {
-          bufferDays = state.preferences.daysBeforeExam;
+          bufferDays = state.preferences.daysBeforeExam || 7;
         } else if (taskData.type === 'assignment') {
-          bufferDays = state.preferences.daysBeforeAssignment;
+          bufferDays = state.preferences.daysBeforeAssignment || 3;
         } else if (taskData.type === 'project') {
-          bufferDays = state.preferences.daysBeforeProject;
+          bufferDays = state.preferences.daysBeforeProject || 10;
+        } else if (taskData.type === 'reading') {
+          bufferDays = 2; // Less buffer for readings
         }
         
-        // Estimate hours if not provided
-        let estimatedHours = taskData.estimatedHours;
-        if (!estimatedHours || estimatedHours === 0) {
-          const hoursByType = {
-            assignment: 3,
-            exam: 10,
-            project: 15,
-            reading: 2,
-            lab: 4
-          };
-          estimatedHours = hoursByType[taskData.type] || 3;
-        }
-        
-        const newTask: Task = {
-          ...taskData,
-          id: taskId,
+        // Create the task with all required fields
+        const newTask: Task = { 
+          ...taskData, 
+          id: taskId, 
           bufferDays,
-          estimatedHours,
-          scheduledBlocks: []
+          scheduledBlocks: [],
+          bufferPercentage: taskData.bufferPercentage || 20
         };
         
         set((state) => ({
           tasks: [...state.tasks, newTask],
         }));
         
-        // Create deadline event
-        const deadlineEvent: Omit<Event, 'id'> = {
+        // Create a deadline event (visual representation of DUE date)
+        const deadlineEvent: Event = {
+          id: uuidv4(),
           title: `DUE: ${taskData.title}`,
           type: 'deadline',
           courseId: taskData.courseId,
           startTime: taskData.dueDate,
-          endTime: new Date(taskData.dueDate.getTime() + 30 * 60 * 1000),
+          endTime: new Date(taskData.dueDate.getTime() + 30 * 60 * 1000), // 30 min block
           description: `Deadline for ${taskData.title}`,
           taskId: taskId,
         };
         
-        get().addEvent(deadlineEvent);
+        set((state) => ({
+          events: [...state.events, deadlineEvent],
+        }));
         
-        // Schedule the task immediately
-        setTimeout(() => {
-          console.log('Auto-scheduling task:', newTask.title);
+        // Schedule DO blocks for the task (work time before deadline)
+        if (taskData.estimatedHours && taskData.estimatedHours > 0) {
           get().scheduleTask(taskId);
-        }, 100);
+        }
       },
       
       updateTask: (id, task) => set((state) => ({
@@ -216,6 +164,7 @@ export const useScheduleStore = create<ScheduleStore>()(
         events: state.events.filter((e) => e.taskId !== id),
       })),
       
+      // TimeBlock actions
       addTimeBlock: (timeBlock) => set((state) => ({
         timeBlocks: [...state.timeBlocks, { ...timeBlock, id: uuidv4() }],
       })),
@@ -228,9 +177,31 @@ export const useScheduleStore = create<ScheduleStore>()(
         timeBlocks: state.timeBlocks.filter((tb) => tb.id !== id),
       })),
       
-      addEvent: (event) => set((state) => ({
-        events: [...state.events, { ...event, id: uuidv4() }],
-      })),
+      // Event actions
+      addEvent: (event) => {
+        const state = get();
+        
+        // Check if this is an exam on a day that has lectures
+        if (event.type === 'exam') {
+          // Remove any lectures on the same day for the same course
+          const examDate = startOfDay(event.startTime);
+          const eventsToKeep = state.events.filter(e => {
+            if (e.type === 'lecture' && e.courseId === event.courseId) {
+              const eventDate = startOfDay(e.startTime);
+              return !isSameDay(eventDate, examDate);
+            }
+            return true;
+          });
+          
+          set({
+            events: [...eventsToKeep, { ...event, id: uuidv4() }],
+          });
+        } else {
+          set((state) => ({
+            events: [...state.events, { ...event, id: uuidv4() }],
+          }));
+        }
+      },
       
       updateEvent: (id, event) => set((state) => ({
         events: state.events.map((e) => (e.id === id ? { ...e, ...event } : e)),
@@ -240,89 +211,106 @@ export const useScheduleStore = create<ScheduleStore>()(
         events: state.events.filter((e) => e.id !== id),
       })),
       
+      // Scheduling
       scheduleTask: (taskId) => {
         const state = get();
         const task = state.tasks.find(t => t.id === taskId);
-        
-        if (!task || task.estimatedHours === 0) {
-          console.log('Task not found or no hours estimated:', taskId);
+        if (!task || !task.estimatedHours || task.estimatedHours === 0) {
+          console.log(`Skipping scheduling for task ${taskId} - no estimated hours`);
           return;
         }
         
-        console.log(`Creating study blocks for: ${task.title} (${task.estimatedHours}h)`);
+        console.log(`Scheduling task: ${task.title}, estimated hours: ${task.estimatedHours}, buffer days: ${task.bufferDays}`);
         
-        // Clear existing blocks for this task
-        set((state) => ({
-          timeBlocks: state.timeBlocks.filter(tb => tb.taskId !== taskId)
-        }));
+        // Calculate soft deadline (when work should be completed)
+        const softDeadline = subDays(task.dueDate, task.bufferDays || 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         
-        // Calculate when to start working
-        const dueDate = new Date(task.dueDate);
-        const bufferDays = task.bufferDays || 3;
-        const startDate = subDays(dueDate, bufferDays + Math.ceil(task.estimatedHours / 2));
+        // Start date is either today or some days before soft deadline
+        const idealStartDate = subDays(softDeadline, Math.ceil(task.estimatedHours / 2)); // Start early enough
+        const startDate = isAfter(today, idealStartDate) ? today : idealStartDate;
         
-        // Create study blocks
-        const blocks: TimeBlock[] = [];
+        // Calculate how many days we have to work
+        const daysAvailable = Math.max(1, differenceInDays(softDeadline, startDate));
+        const hoursPerDay = Math.min(
+          task.estimatedHours / daysAvailable, 
+          state.preferences.hoursPerWorkDay || 3 // Use preference or default to 3
+        );
+        
+        console.log(`Days available: ${daysAvailable}, hours per day: ${hoursPerDay}`);
+        
+        // Create DO blocks (study/work time)
         let remainingHours = task.estimatedHours;
-        let currentDate = new Date(Math.max(startDate.getTime(), Date.now()));
+        let currentDate = new Date(startDate);
+        const newBlocks: TimeBlock[] = [];
         
-        while (remainingHours > 0 && currentDate < dueDate) {
-          // Check if this day has conflicts (clinical days, etc.)
+        while (remainingHours > 0 && isBefore(currentDate, softDeadline)) {
+          // Check if there are any events on this day that would conflict
           const dayEvents = state.events.filter(e => 
             isSameDay(e.startTime, currentDate) && 
-            e.type === 'clinical'
+            (e.type === 'clinical' || e.type === 'exam' || e.type === 'lab')
           );
           
-          if (dayEvents.length === 0) {
-            // Schedule 2-hour study block
-            const blockHours = Math.min(remainingHours, 2);
-            const startHour = state.preferences.preferredStudyTimes.morning ? 9 : 14;
-            
-            const blockStart = new Date(currentDate);
-            blockStart.setHours(startHour, 0, 0, 0);
-            
-            const blockEnd = new Date(blockStart);
-            blockEnd.setHours(startHour + blockHours, 0, 0, 0);
-            
-            blocks.push({
-              id: uuidv4(),
-              taskId: task.id,
-              startTime: blockStart,
-              endTime: blockEnd,
-              completed: false,
-              type: 'study',
-              isManual: false
-            });
-            
-            remainingHours -= blockHours;
-            console.log(`Created study block: ${blockHours}h on ${currentDate.toDateString()}`);
+          // Skip days with all-day events
+          if (dayEvents.some(e => e.type === 'clinical')) {
+            currentDate = addDays(currentDate, 1);
+            continue;
           }
           
+          const hoursToday = Math.min(remainingHours, hoursPerDay);
+          
+          // Find best time slot based on preferences and conflicts
+          let startHour = 14; // Default afternoon
+          if (state.preferences.preferredStudyTimes?.morning && !dayEvents.length) {
+            startHour = 9;
+          } else if (state.preferences.preferredStudyTimes?.evening) {
+            startHour = 18;
+          } else if (state.preferences.preferredStudyTimes?.night) {
+            startHour = 20;
+          }
+          
+          const blockStart = new Date(currentDate);
+          blockStart.setHours(startHour, 0, 0, 0);
+          
+          const blockEnd = new Date(blockStart);
+          blockEnd.setHours(startHour + Math.ceil(hoursToday), 0, 0, 0);
+          
+          const newBlock: TimeBlock = {
+            id: uuidv4(),
+            taskId,
+            startTime: blockStart,
+            endTime: blockEnd,
+            completed: false,
+            type: task.type === 'reading' ? 'study' : 
+                  task.type === 'exam' ? 'review' : 'work'
+          };
+          
+          newBlocks.push(newBlock);
+          
+          remainingHours -= hoursToday;
           currentDate = addDays(currentDate, 1);
         }
         
-        // Add all blocks to store
-        set((state) => ({
-          timeBlocks: [...state.timeBlocks, ...blocks]
-        }));
+        console.log(`Created ${newBlocks.length} DO blocks for task ${task.title}`);
         
-        console.log(`Created ${blocks.length} study blocks for ${task.title}`);
+        // Add all the new blocks
+        set((state) => ({
+          timeBlocks: [...state.timeBlocks, ...newBlocks]
+        }));
       },
       
       rescheduleAllTasks: () => {
         const state = get();
-        console.log('Rescheduling all tasks...');
         
-        // Clear all auto-generated blocks
-        set((state) => ({
-          timeBlocks: state.timeBlocks.filter(tb => tb.isManual === true)
-        }));
+        // Clear existing time blocks
+        set({ timeBlocks: [] });
         
-        // Reschedule each incomplete task
+        // Reschedule all incomplete tasks
         state.tasks
           .filter(task => task.status !== 'completed' && task.estimatedHours > 0)
           .forEach(task => {
-            console.log(`Rescheduling: ${task.title}`);
+            console.log(`Rescheduling task: ${task.title}`);
             get().scheduleTask(task.id);
           });
       },
@@ -331,16 +319,19 @@ export const useScheduleStore = create<ScheduleStore>()(
         preferences: { ...state.preferences, ...preferences },
       })),
       
-      // Helper methods
+      // Queries
       getTasksForDate: (date) => {
         const { tasks } = get();
-        return tasks.filter(task => isSameDay(new Date(task.dueDate), date));
+        return tasks.filter(task => {
+          const taskDate = new Date(task.dueDate);
+          return taskDate.toDateString() === date.toDateString();
+        });
       },
       
       getUpcomingTasks: (days) => {
         const { tasks } = get();
         const now = new Date();
-        const futureDate = addDays(now, days);
+        const futureDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
         
         return tasks.filter(task => {
           const taskDate = new Date(task.dueDate);
@@ -351,7 +342,7 @@ export const useScheduleStore = create<ScheduleStore>()(
       getTasksByCourse: (courseId) => {
         const { tasks } = get();
         return tasks.filter(task => task.courseId === courseId);
-      },
+      }
     }),
     {
       name: 'schedule-store',

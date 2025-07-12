@@ -8,7 +8,7 @@ export interface Task {
   estimatedHours: number;
   actualHours?: number;
   isHardDeadline: boolean;
-  bufferDays?: number; // Optional - will be auto-calculated if not provided
+  bufferPercentage?: number;
   materials?: string[];
   dependencies?: string[];
   scheduledBlocks: TimeBlock[];
@@ -16,6 +16,7 @@ export interface Task {
   description?: string;
   attachments?: string[];
   priority?: number;
+  bufferDays?: number;
 }
 
 export interface TimeBlock {
@@ -53,43 +54,53 @@ export interface RecurringEvent {
 }
 
 export interface UserPreferences {
-  // Study session settings
-  studySessionDuration: number; // minutes per session
-  breakDuration: number; // minutes between sessions
-  maxDailyStudyHours: number; // max hours per day
-  hoursPerWorkDay: number; // average work hours per day for scheduling
-  
-  // Time preferences
-  preferredStudyTimes: {
-    morning: boolean;   // 6-12
-    afternoon: boolean; // 12-18  
-    evening: boolean;   // 18-22
-    night: boolean;     // 22-24
+  studyHours: {
+    start: string;
+    end: string;
   };
-  
-  // Buffer days by task type (days before deadline to finish)
-  daysBeforeExam: number;
-  daysBeforeAssignment: number;
-  daysBeforeProject: number;
-  daysBeforeReading: number;
-  daysBeforeLab: number;
-  
-  // Default hours by task type
-  defaultHoursPerType: {
+  breakDuration: number;
+  sessionDuration: number;
+  complexityDefaults: {
     assignment: number;
-    exam: number;      // Study hours for exam prep
+    exam: number;
     project: number;
     reading: number;
     lab: number;
   };
-  
-  // Complexity multipliers (applied to base hours)
-  complexityMultipliers: {
-    1: number;   // Very easy
-    2: number;   // Easy  
-    3: number;   // Medium
-    4: number;   // Hard
-    5: number;   // Very hard
+  bufferDefaults: {
+    soft: number;
+    hard: number;
+  };
+  energyLevels: {
+    [hour: number]: number;
+  };
+  studySessionDuration?: number;
+  maxDailyStudyHours?: number;
+  preferredStudyTimes?: {
+    morning: boolean;
+    afternoon: boolean;
+    evening: boolean;
+    night: boolean;
+  };
+  daysBeforeExam?: number;
+  daysBeforeAssignment?: number;
+  daysBeforeProject?: number;
+  daysBeforeReading?: number;
+  daysBeforeLab?: number;
+  hoursPerWorkDay?: number;
+  defaultHoursPerType?: {
+    assignment: number;
+    exam: number;
+    project: number;
+    reading: number;
+    lab: number;
+  };
+  complexityMultipliers?: {
+    1: number;
+    2: number;
+    3: number;
+    4: number;
+    5: number;
   };
 }
 
@@ -109,9 +120,5 @@ export interface Event {
   endTime: Date;
   location?: string;
   description?: string;
-  taskId?: string; // For deadline events linked to tasks
+  taskId?: string;
 }
-
-// Helper type for creating tasks without requiring all optional fields
-export type CreateTaskData = Pick<Task, 'title' | 'type' | 'courseId' | 'dueDate' | 'complexity' | 'status'> & 
-  Partial<Pick<Task, 'estimatedHours' | 'isHardDeadline' | 'bufferDays' | 'description' | 'scheduledBlocks' | 'materials' | 'dependencies' | 'actualHours' | 'attachments' | 'priority'>>;

@@ -4,14 +4,14 @@ export const nursingCourses = [
     code: 'NURS310',
     name: 'Adult Health',
     color: '#3b82f6',
-    credits: 6,
+    credits: 4,
     professor: 'TBD'
   },
   {
     code: 'NURS315',
     name: 'Gerontology',
     color: '#10b981',
-    credits: 3,
+    credits: 4,
     professor: 'TBD'
   },
   {
@@ -135,7 +135,6 @@ export const nursingScheduleItems = [
   { id: '10702', course: 'OBGYN_330', date: '2025-07-06', title: 'Osmosis:_Perinatal_and_Postpartum_Mood_and_Anxiety_Disorders', type: 'Video', duration: '0:07:00' },
   { id: '10703', course: 'OBGYN_330', date: '2025-07-06', title: 'Osmosis:_Postpartum_Complications', type: 'Video', duration: '0:08:00' },
   { id: '10704', course: 'OBGYN_330', date: '2025-07-08', title: 'Clinical_Day_4', type: 'Clinical', duration: '10:00:00' },
-  { id: '10705', course: 'OBGYN_330', date: '2025-07-10', title: 'Final_Exam', type: 'Exam', duration: '2:00:00' },
   { id: '10706', course: 'OBGYN_330', date: '2025-07-13', title: 'Chapter_24:_High-Risk_Newborn:_Complications_Associated_with_Gestational_Age_and_Development', type: 'Reading', duration: 'N/A' },
   { id: '10707', course: 'OBGYN_330', date: '2025-07-13', title: 'Chapter_25:_High-Risk_Newborn:_Acquired_and_Congenital_Conditions', type: 'Reading', duration: 'N/A' },
   { id: '10708', course: 'OBGYN_330', date: '2025-07-13', title: 'Osmosis:_High-Risk_Newborn:_Complications_Associated_with_Gestational_Age_and_Development', type: 'Video', duration: '0:08:00' },
