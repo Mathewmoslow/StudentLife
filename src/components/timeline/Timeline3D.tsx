@@ -1,138 +1,10 @@
-import React, { useRef, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Text, Box } from '@react-three/drei';
+import React from 'react';
 import { useScheduleStore } from '../../stores/useScheduleStore';
-import * as THREE from 'three';
 import styles from './Timeline3D.module.css';
 
-interface EventNodeProps {
-  position: [number, number, number];
-  task: any;
-  color: string;
-}
-
-const EventNode: React.FC<EventNodeProps> = ({ position, task, color }) => {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const [hovered, setHovered] = React.useState(false);
-  
-  useFrame(() => {
-    if (meshRef.current && hovered) {
-      meshRef.current.rotation.y += 0.01;
-    }
-  });
-  
-  const size = 0.2 + (task.priority || 1) * 0.1;
-  
-  return (
-    <group position={position}>
-      <Box
-        ref={meshRef}
-        args={[size, size, size]}
-        onPointerOver={() => setHovered(true)}
-        onPointerOut={() => setHovered(false)}
-      >
-        <meshStandardMaterial color={color} />
-      </Box>
-      {hovered && (
-        <Text
-          position={[0, size + 0.3, 0]}
-          fontSize={0.15}
-          color="white"
-          anchorX="center"
-          anchorY="middle"
-        >
-          {task.title}
-        </Text>
-      )}
-    </group>
-  );
-};
-
-// Custom spiral curve class
-class SpiralCurve extends THREE.Curve<THREE.Vector3> {
-  constructor(private scale: number = 1) {
-    super();
-  }
-
-  getPoint(t: number): THREE.Vector3 {
-    const tx = t * this.scale * Math.PI * 8; // 4 full rotations
-    const ty = t * 5; // height progression
-    const tz = 2 + t * 3; // radius progression
-    
-    return new THREE.Vector3(
-      tz * Math.cos(tx),
-      ty,
-      tz * Math.sin(tx)
-    );
-  }
-}
-
-const SpiralTimeline: React.FC = () => {
-  const { tasks } = useScheduleStore();
-  const groupRef = useRef<THREE.Group>(null);
-  
-  useFrame((state) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y = state.clock.getElapsedTime() * 0.05;
-    }
-  });
-  
-  const eventPositions = useMemo(() => {
-    const sortedTasks = [...tasks].sort((a, b) => 
-      new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-    );
-    
-    return sortedTasks.map((task, index) => {
-      const progress = index / Math.max(sortedTasks.length - 1, 1);
-      const theta = progress * Math.PI * 8; // 4 full rotations
-      const radius = 2 + progress * 3;
-      const height = progress * 5;
-      
-      const color = {
-        assignment: '#4CAF50',
-        exam: '#f44336',
-        project: '#2196F3',
-        reading: '#FF9800',
-        lab: '#9C27B0'
-      }[task.type] || '#666';
-      
-      return {
-        position: [
-          radius * Math.cos(theta),
-          height,
-          radius * Math.sin(theta)
-        ] as [number, number, number],
-        task,
-        color
-      };
-    });
-  }, [tasks]);
-  
-  const spiralCurve = useMemo(() => new SpiralCurve(1), []);
-  
-  return (
-    <group ref={groupRef}>
-      {/* Spiral Path */}
-      <mesh>
-        <tubeGeometry args={[
-          spiralCurve,
-          100,
-          0.05,
-          8,
-          false
-        ]} />
-        <meshBasicMaterial color="#333" opacity={0.3} transparent />
-      </mesh>
-      
-      {/* Event Nodes */}
-      {eventPositions.map((event, index) => (
-        <EventNode key={index} {...event} />
-      ))}
-    </group>
-  );
-};
-
 const Timeline3D: React.FC = () => {
+  const { tasks } = useScheduleStore();
+  
   return (
     <div className={styles.container}>
       <div className={styles.controls}>
@@ -161,12 +33,64 @@ const Timeline3D: React.FC = () => {
         </div>
       </div>
       
-      <Canvas camera={{ position: [10, 5, 10], fov: 60 }}>
-        <ambientLight intensity={0.5} />
-        <pointLight position={[10, 10, 10]} intensity={1} />
-        <OrbitControls enableDamping dampingFactor={0.05} />
-        <SpiralTimeline />
-      </Canvas>
+      {/* Temporary 2D fallback while we fix the 3D issues */}
+      <div style={{ 
+        flex: 1, 
+        background: 'var(--bg-tertiary)', 
+        borderRadius: 'var(--radius-lg)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 'var(--spacing-xl)',
+        gap: 'var(--spacing-lg)'
+      }}>
+        <h3>🔧 3D Timeline Temporarily Disabled</h3>
+        <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+          We're fixing a compatibility issue with the 3D timeline. <br/>
+          In the meantime, you can view your schedule in the Schedule tab.
+        </p>
+        
+        {/* Simple task list as fallback */}
+        <div style={{ 
+          background: 'var(--bg-primary)', 
+          padding: 'var(--spacing-lg)', 
+          borderRadius: 'var(--radius-md)',
+          width: '100%',
+          maxWidth: '600px'
+        }}>
+          <h4>Your Tasks ({tasks.length})</h4>
+          {tasks.length === 0 ? (
+            <p style={{ color: 'var(--text-secondary)' }}>No tasks yet. Create some in the Tasks tab!</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+              {tasks.slice(0, 5).map(task => (
+                <div key={task.id} style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  padding: 'var(--spacing-sm)',
+                  background: 'var(--bg-secondary)',
+                  borderRadius: 'var(--radius-sm)'
+                }}>
+                  <span>{task.title}</span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                    {task.type} • Due {new Date(task.dueDate).toLocaleDateString()}
+                  </span>
+                </div>
+              ))}
+              {tasks.length > 5 && (
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', textAlign: 'center' }}>
+                  ...and {tasks.length - 5} more tasks
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+        
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+          💡 The 3D timeline will show a spiral view of all your tasks ordered by due date
+        </p>
+      </div>
     </div>
   );
 };

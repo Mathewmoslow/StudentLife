@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useScheduleStore } from '../../stores/useScheduleStore';
+import { CreateTaskData } from '../../types';
 import styles from './TaskForm.module.css';
 
 const taskSchema = z.object({
@@ -13,7 +14,6 @@ const taskSchema = z.object({
   complexity: z.number().min(1).max(5),
   estimatedHours: z.number().min(0).optional(),
   isHardDeadline: z.boolean(),
-  bufferPercentage: z.number().min(0).max(100),
   description: z.string().optional()
 });
 
@@ -25,7 +25,7 @@ interface TaskFormProps {
 }
 
 const TaskForm: React.FC<TaskFormProps> = ({ onClose, taskId }) => {
-  const { addTask, updateTask, tasks, courses } = useScheduleStore();
+  const { addTask, updateTask, tasks, courses, preferences } = useScheduleStore();
   const task = taskId ? tasks.find(t => t.id === taskId) : null;
   
   const { register, handleSubmit, watch, formState: { errors } } = useForm<TaskFormData>({
@@ -38,53 +38,67 @@ const TaskForm: React.FC<TaskFormProps> = ({ onClose, taskId }) => {
       complexity: task.complexity,
       estimatedHours: task.estimatedHours,
       isHardDeadline: task.isHardDeadline,
-      bufferPercentage: task.bufferPercentage,
       description: task.description
     } : {
       type: 'assignment',
       complexity: 3,
-      isHardDeadline: false,
-      bufferPercentage: 20
+      isHardDeadline: false
     }
   });
   
-  const onSubmit = (data: TaskFormData) => {
-    // Auto-estimate hours if not provided
-    const getEstimatedHours = (): number => {
-      if (data.estimatedHours && data.estimatedHours > 0) {
-        return data.estimatedHours;
-      }
-      
-      // Auto-estimate based on type and complexity
-      const baseHours = {
-        assignment: 3,
-        exam: 10, // Study time for exam
-        project: 15,
-        reading: 2,
-        lab: 4
-      };
-      
-      const complexityMultiplier = {
-        1: 0.5,
-        2: 0.75,
-        3: 1,
-        4: 1.5,
-        5: 2
-      };
-      
-      return baseHours[data.type] * complexityMultiplier[data.complexity as keyof typeof complexityMultiplier];
-    };
-
-    const taskData = {
-      ...data,
-      dueDate: new Date(data.dueDate),
-      status: 'not-started' as const,
-      complexity: data.complexity as 1 | 2 | 3 | 4 | 5,
-      estimatedHours: getEstimatedHours(),
-      scheduledBlocks: task?.scheduledBlocks || []
-    };
+  const watchedType = watch('type');
+  const watchedComplexity = watch('complexity');
+  
+  // Calculate estimated hours preview
+  const getEstimatedHoursPreview = (): number => {
+    const customHours = watch('estimatedHours');
+    if (customHours && customHours > 0) {
+      return customHours;
+    }
     
-    console.log('Creating task with estimated hours:', taskData.estimatedHours);
+    const baseHours = preferences.defaultHoursPerType[watchedType];
+    const multiplier = preferences.complexityMultipliers[watchedComplexity as keyof typeof preferences.complexityMultipliers];
+    
+    return Math.round((baseHours * multiplier) * 10) / 10; // Round to 1 decimal
+  };
+  
+  const getBufferDaysPreview = (): number => {
+    // If task already has bufferDays set, use those, otherwise use preferences
+    if (task?.bufferDays !== undefined) {
+      return task.bufferDays;
+    }
+    
+    switch (watchedType) {
+      case 'exam': return preferences.daysBeforeExam;
+      case 'assignment': return preferences.daysBeforeAssignment;
+      case 'project': return preferences.daysBeforeProject;
+      case 'reading': return preferences.daysBeforeReading;
+      case 'lab': return preferences.daysBeforeLab;
+      default: return 3;
+    }
+  };
+  
+  const getDaysToStartPreview = (): number => {
+    const estimatedHours = getEstimatedHoursPreview();
+    const bufferDays = getBufferDaysPreview();
+    const daysNeeded = Math.ceil(estimatedHours / preferences.hoursPerWorkDay);
+    return daysNeeded + bufferDays;
+  };
+  
+  const onSubmit = (data: TaskFormData) => {
+    const taskData: CreateTaskData = {
+      title: data.title,
+      type: data.type,
+      courseId: data.courseId,
+      dueDate: new Date(data.dueDate),
+      complexity: data.complexity as 1 | 2 | 3 | 4 | 5,
+      status: 'not-started',
+      // Optional fields
+      ...(data.estimatedHours && data.estimatedHours > 0 && { estimatedHours: data.estimatedHours }),
+      ...(data.isHardDeadline !== undefined && { isHardDeadline: data.isHardDeadline }),
+      ...(data.description && { description: data.description }),
+      ...(task?.scheduledBlocks && { scheduledBlocks: task.scheduledBlocks })
+    };
     
     if (task) {
       updateTask(task.id, taskData);
@@ -148,7 +162,9 @@ const TaskForm: React.FC<TaskFormProps> = ({ onClose, taskId }) => {
                 max="5" 
                 {...register('complexity', { valueAsNumber: true })}
               />
-              <span className={styles.rangeValue}>{watch('complexity')}</span>
+              <span className={styles.rangeValue}>
+                {watchedComplexity} - {['Very Easy', 'Easy', 'Medium', 'Hard', 'Very Hard'][watchedComplexity - 1]}
+              </span>
             </div>
           </div>
           
@@ -158,30 +174,24 @@ const TaskForm: React.FC<TaskFormProps> = ({ onClose, taskId }) => {
               <input 
                 type="number" 
                 step="0.5"
-                placeholder="Auto-calculated if empty"
+                placeholder={`Auto: ${getEstimatedHoursPreview()}h`}
                 {...register('estimatedHours', { valueAsNumber: true })}
               />
+              <small className={styles.hint}>
+                Leave empty to use: {preferences.defaultHoursPerType[watchedType]}h × {preferences.complexityMultipliers[watchedComplexity as keyof typeof preferences.complexityMultipliers]} = {getEstimatedHoursPreview()}h
+              </small>
             </div>
             
             <div className={styles.formGroup}>
-              <label>Buffer Time %</label>
-              <input 
-                type="number" 
-                min="0" 
-                max="100"
-                {...register('bufferPercentage', { valueAsNumber: true })}
-              />
+              <label>Hard Deadline</label>
+              <label className={styles.checkboxLabel}>
+                <input 
+                  type="checkbox" 
+                  {...register('isHardDeadline')}
+                />
+                Cannot be moved/extended
+              </label>
             </div>
-          </div>
-          
-          <div className={styles.formGroup}>
-            <label>
-              <input 
-                type="checkbox" 
-                {...register('isHardDeadline')}
-              />
-              Hard deadline (cannot be moved)
-            </label>
           </div>
           
           <div className={styles.formGroup}>
@@ -191,6 +201,36 @@ const TaskForm: React.FC<TaskFormProps> = ({ onClose, taskId }) => {
               rows={3}
               placeholder="Additional notes or requirements"
             />
+          </div>
+          
+          {/* Scheduling Preview */}
+          <div className={styles.preview}>
+            <h4>📅 Scheduling Preview</h4>
+            <div className={styles.previewGrid}>
+              <div className={styles.previewItem}>
+                <span className={styles.previewLabel}>Estimated Hours:</span>
+                <span className={styles.previewValue}>{getEstimatedHoursPreview()}h</span>
+              </div>
+              <div className={styles.previewItem}>
+                <span className={styles.previewLabel}>Buffer Days:</span>
+                <span className={styles.previewValue}>{getBufferDaysPreview()} days</span>
+              </div>
+              <div className={styles.previewItem}>
+                <span className={styles.previewLabel}>Work Days Needed:</span>
+                <span className={styles.previewValue}>{Math.ceil(getEstimatedHoursPreview() / preferences.hoursPerWorkDay)} days</span>
+              </div>
+              <div className={styles.previewItem}>
+                <span className={styles.previewLabel}>Start Work:</span>
+                <span className={styles.previewValue}>{getDaysToStartPreview()} days before due</span>
+              </div>
+              <div className={styles.previewItem}>
+                <span className={styles.previewLabel}>Hours/Day:</span>
+                <span className={styles.previewValue}>{preferences.hoursPerWorkDay}h</span>
+              </div>
+            </div>
+            <small className={styles.previewNote}>
+              You can customize these defaults in Settings → Study Preferences
+            </small>
           </div>
           
           <div className={styles.formActions}>

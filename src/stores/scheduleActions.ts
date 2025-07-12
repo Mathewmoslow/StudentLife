@@ -1,43 +1,25 @@
 import { useScheduleStore } from './useScheduleStore';
-import { TaskScheduler } from '../core/algorithms/scheduler';
 
 export const autoScheduleTasks = () => {
   const state = useScheduleStore.getState();
-  const { tasks, courses, events, preferences, timeBlocks, updateTask } = state;
+  const { tasks, rescheduleAllTasks } = state;
   
-  // Clear existing auto-scheduled blocks (keep manually created ones)
-  const manualBlocks = timeBlocks.filter(block => block.isManual);
-  
-  // Create scheduler instance
-  const scheduler = new TaskScheduler(
-    preferences,
-    courses,
-    events,
-    manualBlocks
-  );
-  
-  // Schedule all incomplete tasks
+  // Get incomplete tasks
   const incompleteTasks = tasks.filter(task => task.status !== 'completed');
-  const scheduledBlocks = scheduler.scheduleAllTasks(incompleteTasks);
   
-  // Update store with new blocks
-  const allNewBlocks: any[] = [];
-  scheduledBlocks.forEach((blocks, taskId) => {
-    allNewBlocks.push(...blocks);
-    
-    // Use the updateTask method instead of direct mutation
-    updateTask(taskId, { scheduledBlocks: blocks });
-  });
+  console.log(`Auto-scheduling ${incompleteTasks.length} tasks...`);
   
-  // Update timeBlocks in store
-  useScheduleStore.setState({
-    timeBlocks: [...manualBlocks, ...allNewBlocks]
-  });
+  // Use the store's built-in reschedule function which handles all the smart logic
+  rescheduleAllTasks();
   
-  console.log(`Auto-scheduled ${allNewBlocks.length} study blocks for ${incompleteTasks.length} tasks`);
+  // Count the newly created blocks
+  const updatedState = useScheduleStore.getState();
+  const autoBlocks = updatedState.timeBlocks.filter(block => !block.isManual);
+  
+  console.log(`Created ${autoBlocks.length} study blocks for ${incompleteTasks.length} tasks`);
   
   return {
     tasksScheduled: incompleteTasks.length,
-    blocksCreated: allNewBlocks.length
+    blocksCreated: autoBlocks.length
   };
 };

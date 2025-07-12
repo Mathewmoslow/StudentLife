@@ -1,5 +1,6 @@
 import { nursingCourses, nursingScheduleItems } from '../utils/nursingSampleData';
 import { useScheduleStore } from '../stores/useScheduleStore';
+import { CreateTaskData } from '../types';
 import { parseISO, setHours, setMinutes } from 'date-fns';
 
 export class DataLoader {
@@ -130,21 +131,7 @@ export class DataLoader {
     return 0;
   }
   
-  // Estimate hours based on task type when duration not provided
-  private static estimateHours(type: string): number {
-    const estimates: Record<string, number> = {
-      'Assignment': 3,
-      'Quiz': 1,
-      'Reading': 2,
-      'Video': 0.5,
-      'Activity': 1,
-      'Project': 8,
-      'Simulation': 2, // For task-type simulations
-    };
-    return estimates[type] || 2;
-  }
-  
-  // Estimate complexity based on type
+  // Estimate complexity based on type and duration
   private static estimateComplexity(type: string, duration: number): 1 | 2 | 3 | 4 | 5 {
     if (type === 'Quiz') return 2;
     if (type === 'Assignment' || type === 'Activity') return 3;
@@ -194,33 +181,34 @@ export class DataLoader {
   private static createTask(item: any, courseId: string, dueDate: Date) {
     const store = useScheduleStore.getState();
     
-    // Get duration from data or estimate
-    let estimatedHours = this.parseDuration(item.duration);
-    if (estimatedHours === 0) {
-      estimatedHours = this.estimateHours(item.type);
-    }
+    // Get duration from data (will be 0 if not provided, triggering auto-estimation)
+    const estimatedHours = this.parseDuration(item.duration);
     
     const taskType = this.mapTaskType(item.type);
     const complexity = this.estimateComplexity(item.type, estimatedHours);
     
-    console.log(`Creating task: ${item.title}, estimated hours: ${estimatedHours}, type: ${item.type}`);
+    console.log(`Creating task: ${item.title}, estimated hours: ${estimatedHours || 'auto'}, type: ${item.type}`);
     
-    // addTask will automatically:
-    // 1. Create a "DUE" deadline event
-    // 2. Schedule "DO" time blocks with appropriate buffer
-    store.addTask({
+    // Create task data object
+    const taskData: CreateTaskData = {
       title: item.title.replace(/_/g, ' '),
       courseId,
       type: taskType,
       dueDate,
-      estimatedHours,
       complexity,
-      description: `${item.type} for ${item.course.replace('_', ' ')}`,
+      status: 'not-started',
       isHardDeadline: true,
-      bufferDays: 0, // Will be set by store based on type
-      scheduledBlocks: [],
-      status: 'not-started'
-    });
+      description: `${item.type} for ${item.course.replace('_', ' ')}`,
+      // Only include estimatedHours if we have actual data (not 0)
+      ...(estimatedHours > 0 && { estimatedHours })
+    };
+    
+    // addTask will automatically:
+    // 1. Calculate estimatedHours if not provided (using user preferences)
+    // 2. Set buffer days based on task type and user preferences  
+    // 3. Create a "DUE" deadline event
+    // 4. Schedule "DO" time blocks with appropriate timing
+    store.addTask(taskData);
   }
   
   private static mapTaskType(type: string): 'assignment' | 'project' | 'reading' | 'exam' | 'lab' {

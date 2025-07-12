@@ -7,8 +7,5 @@ export default defineConfig({
     modules: {
       localsConvention: 'camelCase'
     }
-  },
-  optimizeDeps: {
-    include: ['three', '@react-three/fiber', '@react-three/drei']
   }
 })
