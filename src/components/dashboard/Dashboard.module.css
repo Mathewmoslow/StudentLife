@@ -1,3 +1,4 @@
+/* src/components/dashboard/Dashboard.module.css - Fixed */
 .dashboard {
   max-width: 1400px;
   margin: 0 auto;
@@ -5,19 +6,31 @@
 
 .header {
   margin-bottom: var(--spacing-xl);
+  text-align: center;
+  padding: var(--spacing-xl);
+  background: linear-gradient(135deg, var(--bg-primary), var(--bg-tertiary));
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
 }
 
 .header h1 {
-  margin-bottom: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+  font-size: 2.5rem;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .header p {
   color: var(--text-secondary);
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
 .statsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: var(--spacing-lg);
   margin-bottom: var(--spacing-xl);
 }
@@ -32,17 +45,28 @@
   background: var(--bg-primary);
   border-radius: var(--radius-lg);
   padding: var(--spacing-xl);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.section:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .section h2 {
   margin-bottom: var(--spacing-lg);
-  font-size: 1.5rem;
+  font-size: 1.75rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
 }
 
 .taskGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: var(--spacing-lg);
 }
 
@@ -50,8 +74,18 @@
   text-align: center;
   color: var(--text-secondary);
   padding: var(--spacing-xl);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 2px dashed var(--border-color);
+  font-style: italic;
 }
 
 .overdueTitle {
   color: var(--color-danger);
+  position: relative;
+}
+
+.overdueTitle::before {
+  content: '⚠️';
+  margin-right: var(--spacing-sm);
 }

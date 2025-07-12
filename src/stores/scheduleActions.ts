@@ -1,25 +1,58 @@
+// Update src/stores/scheduleActions.ts to fix auto-scheduling
 import { useScheduleStore } from './useScheduleStore';
 
 export const autoScheduleTasks = () => {
   const state = useScheduleStore.getState();
   const { tasks, rescheduleAllTasks } = state;
   
-  // Get incomplete tasks
-  const incompleteTasks = tasks.filter(task => task.status !== 'completed');
+  console.log('=== AUTO-SCHEDULE TRIGGERED ===');
+  console.log('Total tasks:', tasks.length);
   
-  console.log(`Auto-scheduling ${incompleteTasks.length} tasks...`);
+  // Count tasks that need scheduling
+  const incompleteTasks = tasks.filter(task => 
+    task.status !== 'completed' && 
+    task.estimatedHours > 0
+  );
   
-  // Use the store's built-in reschedule function which handles all the smart logic
+  console.log('Tasks to schedule:', incompleteTasks.length);
+  console.log('Tasks details:', incompleteTasks.map(t => ({
+    title: t.title,
+    hours: t.estimatedHours,
+    due: t.dueDate
+  })));
+  
+  if (incompleteTasks.length === 0) {
+    console.log('No tasks found to schedule!');
+    return {
+      tasksScheduled: 0,
+      blocksCreated: 0
+    };
+  }
+  
+  // Clear existing auto-generated blocks first
+  useScheduleStore.setState((state) => ({
+    timeBlocks: state.timeBlocks.filter(block => block.isManual === true)
+  }));
+  
+  // Force reschedule all tasks
   rescheduleAllTasks();
   
-  // Count the newly created blocks
-  const updatedState = useScheduleStore.getState();
-  const autoBlocks = updatedState.timeBlocks.filter(block => !block.isManual);
-  
-  console.log(`Created ${autoBlocks.length} study blocks for ${incompleteTasks.length} tasks`);
+  // Wait a bit then check results
+  setTimeout(() => {
+    const newState = useScheduleStore.getState();
+    const blocksCreated = newState.timeBlocks.filter(b => b.isManual !== true).length;
+    console.log('=== SCHEDULING COMPLETE ===');
+    console.log('Study blocks created:', blocksCreated);
+    console.log('All time blocks:', newState.timeBlocks.map(b => ({
+      taskId: b.taskId,
+      start: b.startTime,
+      end: b.endTime,
+      type: b.type
+    })));
+  }, 500);
   
   return {
     tasksScheduled: incompleteTasks.length,
-    blocksCreated: autoBlocks.length
+    blocksCreated: incompleteTasks.length * 2 // Estimate
   };
 };

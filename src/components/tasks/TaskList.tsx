@@ -1,8 +1,8 @@
+// Quick fix: Update src/components/tasks/TaskList.tsx to force styling
 import React, { useState } from 'react';
 import { useScheduleStore } from '../../stores/useScheduleStore';
 import TaskForm from './TaskForm';
 import { format } from 'date-fns';
-import styles from './TaskList.module.css';
 import { AutoScheduleButton } from './AutoScheduleButton';
 
 const TaskList: React.FC = () => {
@@ -35,36 +35,143 @@ const TaskList: React.FC = () => {
     updateTask(taskId, { status: 'completed' });
   };
   
+  // Inline styles for immediate fix
+  const containerStyle = {
+    maxWidth: '1200px',
+    margin: '0 auto'
+  };
+  
+  const headerStyle = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '2rem'
+  };
+  
+  const titleStyle = {
+    color: '#f9fafb',
+    fontSize: '2rem',
+    fontWeight: '600'
+  };
+  
+  const buttonStyle = {
+    background: '#6366f1',
+    color: 'white',
+    padding: '12px 24px',
+    fontWeight: '600',
+    borderRadius: '8px',
+    border: 'none',
+    cursor: 'pointer'
+  };
+  
+  const filtersStyle = {
+    display: 'flex',
+    gap: '8px',
+    marginBottom: '2rem',
+    background: '#1f2937',
+    padding: '16px',
+    borderRadius: '12px',
+    border: '1px solid #374151'
+  };
+  
+  const filterButtonStyle = (isActive: boolean) => ({
+    background: isActive ? '#6366f1' : 'transparent',
+    color: isActive ? 'white' : '#d1d5db',
+    padding: '8px 16px',
+    borderRadius: '6px',
+    border: 'none',
+    cursor: 'pointer',
+    fontWeight: '500'
+  });
+  
+  const taskItemStyle = {
+    background: '#1f2937',
+    border: '1px solid #374151',
+    borderRadius: '12px',
+    padding: '24px',
+    marginBottom: '16px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  };
+  
+  const taskMainStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    flex: 1
+  };
+  
+  const taskInfoStyle = {
+    flex: 1
+  };
+  
+  const taskTitleStyle = (completed: boolean) => ({
+    fontSize: '18px',
+    marginBottom: '8px',
+    color: '#f9fafb',
+    fontWeight: '600',
+    textDecoration: completed ? 'line-through' : 'none',
+    opacity: completed ? 0.7 : 1
+  });
+  
+  const taskMetaStyle = {
+    display: 'flex',
+    gap: '16px',
+    fontSize: '14px',
+    color: '#d1d5db',
+    alignItems: 'center'
+  };
+  
+  const typeStyle = {
+    background: '#374151',
+    padding: '2px 8px',
+    borderRadius: '4px',
+    fontWeight: '500',
+    textTransform: 'capitalize' as const
+  };
+  
+  const actionButtonStyle = {
+    background: '#111827',
+    color: '#f9fafb',
+    padding: '6px 12px',
+    fontSize: '14px',
+    border: '1px solid #374151',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    marginLeft: '8px'
+  };
+  
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h2>All Tasks</h2>
-        <button onClick={() => setShowForm(true)} className={styles.addButton}>
+    <div style={containerStyle}>
+      <div style={headerStyle}>
+        <h2 style={titleStyle}>All Tasks</h2>
+        <button onClick={() => setShowForm(true)} style={buttonStyle}>
           + New Task
         </button>
       </div>
       
-      <div className={styles.filters}>
+      <div style={filtersStyle}>
         <button 
-          className={filter === 'all' ? styles.active : ''}
+          style={filterButtonStyle(filter === 'all')}
           onClick={() => setFilter('all')}
         >
           All ({tasks.length})
         </button>
         <button 
-          className={filter === 'upcoming' ? styles.active : ''}
+          style={filterButtonStyle(filter === 'upcoming')}
           onClick={() => setFilter('upcoming')}
         >
           Upcoming
         </button>
         <button 
-          className={filter === 'overdue' ? styles.active : ''}
+          style={filterButtonStyle(filter === 'overdue')}
           onClick={() => setFilter('overdue')}
         >
           Overdue
         </button>
         <button 
-          className={filter === 'completed' ? styles.active : ''}
+          style={filterButtonStyle(filter === 'completed')}
           onClick={() => setFilter('completed')}
         >
           Completed
@@ -73,36 +180,43 @@ const TaskList: React.FC = () => {
       
       <AutoScheduleButton />
 
-      <div className={styles.taskList}>
+      <div>
         {filteredTasks.map(task => (
-          <div key={task.id} className={styles.taskItem}>
-            <div className={styles.taskMain}>
+          <div key={task.id} style={taskItemStyle}>
+            <div style={taskMainStyle}>
               <input
                 type="checkbox"
                 checked={task.status === 'completed'}
                 onChange={() => handleComplete(task.id)}
-                className={styles.checkbox}
+                style={{ width: '20px', height: '20px', cursor: 'pointer' }}
               />
               
-              <div className={styles.taskInfo}>
-                <h3 className={task.status === 'completed' ? styles.completed : ''}>
+              <div style={taskInfoStyle}>
+                <h3 style={taskTitleStyle(task.status === 'completed')}>
                   {task.title}
                 </h3>
-                <div className={styles.taskMeta}>
-                  <span className={styles.type}>{task.type}</span>
-                  <span className={styles.complexity}>
+                <div style={taskMetaStyle}>
+                  <span style={typeStyle}>{task.type}</span>
+                  <span style={{ color: '#f59e0b', fontWeight: '600' }}>
                     {'★'.repeat(task.complexity)}
                   </span>
-                  <span className={styles.due}>
+                  <span style={{ color: '#9ca3af' }}>
                     Due {format(new Date(task.dueDate), 'MMM d, yyyy')}
+                  </span>
+                  <span style={{ color: '#10b981', fontWeight: '600' }}>
+                    {task.estimatedHours}h
                   </span>
                 </div>
               </div>
             </div>
             
-            <div className={styles.taskActions}>
-              <button onClick={() => setEditingTask(task.id)}>Edit</button>
-              <button onClick={() => deleteTask(task.id)}>Delete</button>
+            <div>
+              <button onClick={() => setEditingTask(task.id)} style={actionButtonStyle}>
+                Edit
+              </button>
+              <button onClick={() => deleteTask(task.id)} style={actionButtonStyle}>
+                Delete
+              </button>
             </div>
           </div>
         ))}

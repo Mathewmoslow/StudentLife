@@ -1,38 +1,60 @@
+// Update src/services/dataLoader.ts to ensure tasks have estimated hours
 import { nursingCourses, nursingScheduleItems } from '../utils/nursingSampleData';
 import { useScheduleStore } from '../stores/useScheduleStore';
-import { CreateTaskData } from '../types';
 import { parseISO, setHours, setMinutes } from 'date-fns';
 
 export class DataLoader {
   static loadNursingData() {
+    console.log('=== LOADING NURSING DATA ===');
     const store = useScheduleStore.getState();
     
-    // Clear existing data
+    // Clear existing data first
     this.clearAllData();
     
     // Load courses
     this.loadCourses();
+    console.log('Courses loaded:', store.courses.length);
     
     // Process schedule items
     this.processScheduleItems();
+    console.log('Items processed');
     
-    // After loading, trigger scheduling for all tasks
-    console.log('Data loaded, triggering task scheduling...');
-    store.rescheduleAllTasks();
+    // After loading, check what we have
+    setTimeout(() => {
+      const newState = useScheduleStore.getState();
+      console.log('Final state:');
+      console.log('- Courses:', newState.courses.length);
+      console.log('- Events:', newState.events.length);
+      console.log('- Tasks:', newState.tasks.length);
+      console.log('- Time blocks:', newState.timeBlocks.length);
+      
+      // Trigger auto-scheduling
+      console.log('Triggering auto-schedule...');
+      newState.rescheduleAllTasks();
+    }, 1000);
   }
   
   private static clearAllData() {
     const store = useScheduleStore.getState();
+    
+    // Clear existing data
     store.courses.forEach(course => store.deleteCourse(course.id));
     store.events.forEach(event => store.deleteEvent(event.id));
     store.tasks.forEach(task => store.deleteTask(task.id));
+    
+    // Reset store
+    useScheduleStore.setState({
+      courses: [],
+      tasks: [],
+      events: [],
+      timeBlocks: []
+    });
   }
   
   private static loadCourses() {
     const store = useScheduleStore.getState();
     
     nursingCourses.forEach(courseData => {
-      // Map course codes properly
       const courseCode = courseData.code;
       const schedule = this.getCourseSchedule(courseCode);
       
@@ -45,25 +67,26 @@ export class DataLoader {
         schedule: schedule
       });
     });
+    
+    console.log('Added courses:', nursingCourses.map(c => c.code));
   }
   
   private static getCourseSchedule(courseCode: string) {
-    // Define regular weekly schedules for each course
     switch(courseCode) {
-      case 'NURS310': // Adult Health
+      case 'NURS310':
         return [
           { dayOfWeek: 2, startTime: '09:00', endTime: '12:05', type: 'lecture' as const },
           { dayOfWeek: 3, startTime: '07:00', endTime: '17:00', type: 'lab' as const }
         ];
-      case 'NURS315': // Gerontology
+      case 'NURS315':
         return [
           { dayOfWeek: 1, startTime: '13:00', endTime: '16:00', type: 'lecture' as const }
         ];
-      case 'NURS335': // NCLEX
+      case 'NURS335':
         return [
           { dayOfWeek: 1, startTime: '09:00', endTime: '12:00', type: 'lecture' as const }
         ];
-      case 'NURS330': // OB/GYN
+      case 'NURS330':
         return [
           { dayOfWeek: 0, startTime: '09:00', endTime: '12:00', type: 'lecture' as const },
           { dayOfWeek: 1, startTime: '07:00', endTime: '17:00', type: 'lab' as const }
@@ -76,13 +99,16 @@ export class DataLoader {
   private static processScheduleItems() {
     const store = useScheduleStore.getState();
     
-    // Define event types - these are scheduled class time (no "DO" blocks needed)
+    // Define event types that create calendar events (not tasks)
     const eventTypes = ['Lecture', 'Clinical', 'Lab', 'Simulation', 'Holiday', 'Review', 'Exam'];
     
+    let tasksCreated = 0;
+    let eventsCreated = 0;
+    
     nursingScheduleItems.forEach(item => {
-      // Map course code to course ID
       const courseCode = this.mapCourseCode(item.course);
       const course = store.courses.find(c => c.code === courseCode);
+      
       if (!course) {
         console.warn(`Course not found for ${item.course}`);
         return;
@@ -93,11 +119,15 @@ export class DataLoader {
       if (eventTypes.includes(item.type)) {
         // Create EVENT (scheduled class time)
         this.createEvent(item, course.id, itemDate);
+        eventsCreated++;
       } else {
         // Create TASK (needs "DO" time scheduled)
         this.createTask(item, course.id, itemDate);
+        tasksCreated++;
       }
     });
+    
+    console.log(`Created ${eventsCreated} events and ${tasksCreated} tasks`);
   }
   
   private static mapCourseCode(csvCourse: string): string {
@@ -110,10 +140,9 @@ export class DataLoader {
     return mapping[csvCourse] || csvCourse;
   }
   
-  // Parse duration from CSV format (e.g., "0:02:28") to hours
   private static parseDuration(duration: string): number {
     if (!duration || duration === 'N/A' || duration === '0' || duration === 'TBD') {
-      return 0; // Will use estimates later
+      return 0;
     }
     
     const parts = duration.split(':');
@@ -131,14 +160,25 @@ export class DataLoader {
     return 0;
   }
   
-  // Estimate complexity based on type and duration
+  private static estimateHours(type: string): number {
+    const estimates: Record<string, number> = {
+      'Assignment': 4,
+      'Quiz': 2,
+      'Reading': 3,
+      'Video': 1,
+      'Activity': 2,
+      'Project': 10,
+      'Simulation': 3,
+    };
+    return estimates[type] || 3;
+  }
+  
   private static estimateComplexity(type: string, duration: number): 1 | 2 | 3 | 4 | 5 {
     if (type === 'Quiz') return 2;
     if (type === 'Assignment' || type === 'Activity') return 3;
     if (type === 'Reading' || type === 'Video') return 2;
     if (type === 'Project') return 4;
     
-    // Also consider duration
     if (duration > 4) return 4;
     if (duration > 2) return 3;
     return 2;
@@ -148,20 +188,15 @@ export class DataLoader {
     const store = useScheduleStore.getState();
     const duration = this.parseDuration(item.duration) || this.getDefaultEventDuration(item.type);
     
-    // Set start times based on type
-    let startHour = 9; // Default
+    let startHour = 9;
     if (item.type === 'Clinical') {
-      startHour = 7; // Clinical starts at 7 AM
+      startHour = 7;
     } else if (item.type === 'Exam') {
-      startHour = 9; // Exams at 9 AM (replace lecture time)
-    } else if (item.type === 'Lecture') {
-      startHour = 9; // Lectures at 9 AM
+      startHour = 9;
     } else if (item.type === 'Lab') {
-      startHour = 13; // Labs at 1 PM
+      startHour = 13;
     } else if (item.type === 'Simulation') {
-      startHour = 13; // Simulations at 1 PM
-    } else if (item.type === 'Review') {
-      startHour = 14; // Review sessions at 2 PM
+      startHour = 13;
     }
     
     const startTime = setMinutes(setHours(date, startHour), 0);
@@ -181,40 +216,40 @@ export class DataLoader {
   private static createTask(item: any, courseId: string, dueDate: Date) {
     const store = useScheduleStore.getState();
     
-    // Get duration from data (will be 0 if not provided, triggering auto-estimation)
-    const estimatedHours = this.parseDuration(item.duration);
+    // Get or estimate duration
+    let estimatedHours = this.parseDuration(item.duration);
+    if (estimatedHours === 0) {
+      estimatedHours = this.estimateHours(item.type);
+    }
+    
+    // Ensure minimum hours for meaningful scheduling
+    if (estimatedHours < 1) {
+      estimatedHours = 2; // Minimum 2 hours for any task
+    }
     
     const taskType = this.mapTaskType(item.type);
     const complexity = this.estimateComplexity(item.type, estimatedHours);
     
-    console.log(`Creating task: ${item.title}, estimated hours: ${estimatedHours || 'auto'}, type: ${item.type}`);
+    console.log(`Creating task: ${item.title}, ${estimatedHours}h, complexity: ${complexity}`);
     
-    // Create task data object
-    const taskData: CreateTaskData = {
+    store.addTask({
       title: item.title.replace(/_/g, ' '),
       courseId,
       type: taskType,
       dueDate,
+      estimatedHours,
       complexity,
-      status: 'not-started',
-      isHardDeadline: true,
       description: `${item.type} for ${item.course.replace('_', ' ')}`,
-      // Only include estimatedHours if we have actual data (not 0)
-      ...(estimatedHours > 0 && { estimatedHours })
-    };
-    
-    // addTask will automatically:
-    // 1. Calculate estimatedHours if not provided (using user preferences)
-    // 2. Set buffer days based on task type and user preferences  
-    // 3. Create a "DUE" deadline event
-    // 4. Schedule "DO" time blocks with appropriate timing
-    store.addTask(taskData);
+      isHardDeadline: true,
+      status: 'not-started',
+      scheduledBlocks: []
+    });
   }
   
   private static mapTaskType(type: string): 'assignment' | 'project' | 'reading' | 'exam' | 'lab' {
     switch(type.toLowerCase()) {
       case 'quiz':
-        return 'exam'; // Quizzes are like mini-exams for scheduling
+        return 'exam';
       case 'assignment':
       case 'activity':
         return 'assignment';
@@ -230,31 +265,24 @@ export class DataLoader {
   
   private static mapEventType(type: string): 'lecture' | 'clinical' | 'lab' | 'exam' | 'simulation' | 'review' | 'deadline' {
     switch(type.toLowerCase()) {
-      case 'lecture':
-        return 'lecture';
-      case 'clinical':
-        return 'clinical';
-      case 'lab':
-        return 'lab';
-      case 'exam':
-        return 'exam';
-      case 'simulation':
-        return 'simulation';
-      case 'review':
-        return 'review';
-      default:
-        return 'lecture';
+      case 'lecture': return 'lecture';
+      case 'clinical': return 'clinical';
+      case 'lab': return 'lab';
+      case 'exam': return 'exam';
+      case 'simulation': return 'simulation';
+      case 'review': return 'review';
+      default: return 'lecture';
     }
   }
   
   private static getDefaultEventDuration(type: string): number {
     const durations: Record<string, number> = {
-      'Clinical': 10, // 10 hours
-      'Exam': 2, // 2 hours
-      'Lecture': 3, // 3 hours
-      'Lab': 4, // 4 hours
-      'Simulation': 3.5, // 3.5 hours
-      'Review': 2, // 2 hours
+      'Clinical': 10,
+      'Exam': 2,
+      'Lecture': 3,
+      'Lab': 4,
+      'Simulation': 3.5,
+      'Review': 2,
     };
     return durations[type] || 2;
   }

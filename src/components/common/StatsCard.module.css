@@ -1,28 +1,60 @@
+/* src/components/common/StatsCard.module.css - Fixed */
 .card {
   background: var(--bg-primary);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
+  gap: var(--spacing-lg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--color-primary), var(--color-secondary));
+  transition: width 0.3s ease;
 }
 
 .card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: var(--color-primary);
+}
+
+.card:hover::before {
+  width: 8px;
 }
 
 .icon {
-  font-size: 2rem;
-  width: 3rem;
-  height: 3rem;
+  font-size: 2.5rem;
+  width: 4rem;
+  height: 4rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  border-radius: var(--radius-lg);
+  color: white;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  position: relative;
+}
+
+.icon::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: calc(var(--radius-lg) - 2px);
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+  pointer-events: none;
 }
 
 .content {
@@ -33,17 +65,25 @@
   font-size: 0.875rem;
   color: var(--text-secondary);
   margin-bottom: var(--spacing-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .value {
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: 2rem;
+  font-weight: 700;
   color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: var(--spacing-xs);
 }
 
 .trend {
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .trend.up {
