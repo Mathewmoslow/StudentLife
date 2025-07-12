@@ -1,0 +1,55 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  max-width: 600px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.formGroup label {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.timeRange {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.timeRange input {
+  flex: 1;
+}
+
+.bufferInputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+}
+
+.bufferInputs > div {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.bufferInputs label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.bufferInputs input {
+  width: 80px;
+}
+
+.saveButton {
+  background: var(--color-primary);
+  color: white;
+  padding: var(--spacing-md) var(--spacing-xl);
+  align-self: flex-start;
+}

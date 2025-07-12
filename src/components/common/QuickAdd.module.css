@@ -1,0 +1,60 @@
+.quickAdd {
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.quickAdd form {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: flex-start;
+}
+
+.input {
+  flex: 1;
+  padding: var(--spacing-md);
+  font-size: 1rem;
+  border: 2px solid transparent;
+  background: var(--bg-secondary);
+}
+
+.input:focus {
+  border-color: var(--color-primary);
+  background: var(--bg-primary);
+}
+
+.hints {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+}
+
+.hints p {
+  margin-bottom: var(--spacing-sm);
+  font-weight: 500;
+}
+
+.hints ul {
+  list-style: none;
+  padding-left: var(--spacing-lg);
+}
+
+.hints li {
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-secondary);
+}
+
+.submitButton {
+  padding: var(--spacing-md) var(--spacing-xl);
+  background: var(--color-primary);
+  color: white;
+  font-weight: 500;
+}
+
+.submitButton:hover {
+  background: var(--color-secondary);
+}

@@ -1,0 +1,384 @@
+.scheduler {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-primary);
+}
+
+.header {
+  padding: var(--spacing-lg);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.headerTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.viewToggle {
+  display: flex;
+  gap: var(--spacing-xs);
+  background: var(--bg-primary);
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-md);
+}
+
+.viewToggle button {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.viewToggle button.active {
+  background: var(--primary);
+  color: white;
+}
+
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.navigation button {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.navigation button:hover {
+  background: var(--bg-tertiary);
+}
+
+.currentDate {
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 300px;
+  text-align: center;
+}
+
+.todayButton {
+  margin-left: auto;
+  background: var(--primary) !important;
+  color: white !important;
+  border: none !important;
+  padding: var(--spacing-xs) var(--spacing-md) !important;
+}
+
+/* Calendar Container with Scroll */
+.calendarContainer {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+.calendar {
+  display: flex;
+  height: 100%;
+  overflow: auto;
+  position: relative;
+  background: var(--bg-primary);
+}
+
+/* Fix scrollbar styling */
+.calendar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.calendar::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+.calendar::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 5px;
+}
+
+.calendar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.timeColumn {
+  position: sticky;
+  left: 0;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  z-index: 10;
+  min-width: 60px;
+  flex-shrink: 0;
+}
+
+.spacer {
+  height: 60px;
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  background: var(--bg-secondary);
+  z-index: 11;
+}
+
+.timeLabel {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color-light);
+}
+
+.daysContainer {
+  display: flex;
+  min-width: fit-content;
+}
+
+.dayColumn {
+  min-width: 150px;
+  width: 150px;
+  border-right: 1px solid var(--border-color-light);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.dayHeader {
+  height: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 9;
+}
+
+.dayHeader.today {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.dayHeader.today .dayDate {
+  background: var(--primary);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dayName {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.dayDate {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dayGrid {
+  position: relative;
+  height: calc(16 * 60px); /* 16 hours * 60px per hour */
+  background-image: repeating-linear-gradient(
+    180deg,
+    var(--border-color-light) 0,
+    var(--border-color-light) 1px,
+    transparent 1px,
+    transparent 60px
+  );
+}
+
+/* Event and Study Block Styles */
+.eventBlock,
+.studyBlock {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.eventBlock {
+  color: white;
+  font-weight: 500;
+}
+
+.studyBlock {
+  background: rgba(16, 185, 129, 0.1);
+  border: 2px solid #10b981;
+  color: var(--text-primary);
+}
+
+.eventBlock:hover,
+.studyBlock:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
+.blockContent {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.blockTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.blockMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.625rem;
+  opacity: 0.9;
+}
+
+.blockTime {
+  font-size: 0.625rem;
+  opacity: 0.8;
+}
+
+.blockLocation {
+  font-size: 0.625rem;
+  opacity: 0.9;
+}
+
+/* Month View Styles */
+.monthView {
+  flex: 1;
+  padding: var(--spacing-lg);
+  overflow: auto;
+}
+
+.monthHeader {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: var(--border-color);
+  border: 1px solid var(--border-color);
+}
+
+.monthDayHeader {
+  background: var(--bg-secondary);
+  padding: var(--spacing-sm);
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.monthGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border-color);
+  border: 1px solid var(--border-color);
+  border-top: none;
+}
+
+.monthWeek {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+}
+
+.monthDay {
+  background: var(--bg-primary);
+  min-height: 120px;
+  padding: var(--spacing-xs);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.monthDay:hover {
+  background: var(--bg-secondary);
+}
+
+.monthDay.otherMonth {
+  opacity: 0.5;
+}
+
+.monthDay.today {
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.monthDay.today .monthDayNumber {
+  background: var(--primary);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.monthDayNumber {
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+}
+
+.monthDayEvents {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.monthEvent {
+  font-size: 0.625rem;
+  padding: 2px 4px;
+  border-radius: 2px;
+  color: white;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.monthStudyBlock {
+  font-size: 0.625rem;
+  padding: 2px 4px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid #10b981;
+  border-radius: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.monthMore {
+  font-size: 0.625rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-top: 2px;
+}
