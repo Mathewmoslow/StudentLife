@@ -33,6 +33,11 @@
   color: white;
 }
 
+.searchWrapper {
+  margin-bottom: var(--spacing-xl);
+  padding: 0 var(--spacing-sm);
+}
+
 .navList {
   list-style: none;
   display: flex;

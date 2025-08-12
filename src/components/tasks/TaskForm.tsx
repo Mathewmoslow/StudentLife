@@ -51,17 +51,26 @@ const TaskForm: React.FC<TaskFormProps> = ({ onClose, taskId }) => {
   const taskType = watch('type');
   
   const onSubmit = (data: TaskFormData) => {
-    const taskData = {
-      ...data,
-      dueDate: new Date(data.dueDate),
-      estimatedHours: data.estimatedHours || 0,
-      status: 'not-started' as const
-    };
-    
     if (task) {
-      updateTask(task.id, taskData);
+      updateTask(task.id, {
+        ...data,
+        complexity: data.complexity as 1 | 2 | 3 | 4 | 5,
+        dueDate: new Date(data.dueDate),
+        estimatedHours: data.estimatedHours || 0
+      });
     } else {
-      addTask(taskData);
+      addTask({
+        title: data.title,
+        type: data.type,
+        courseId: data.courseId,
+        dueDate: new Date(data.dueDate),
+        complexity: data.complexity as 1 | 2 | 3 | 4 | 5,
+        estimatedHours: data.estimatedHours || 0,
+        isHardDeadline: data.isHardDeadline,
+        bufferPercentage: data.bufferPercentage,
+        status: 'not-started',
+        description: data.description
+      });
     }
     
     onClose();
@@ -113,14 +122,23 @@ const TaskForm: React.FC<TaskFormProps> = ({ onClose, taskId }) => {
             </div>
             
             <div className={styles.formGroup}>
-              <label>Complexity (1-5)</label>
+              <label>Difficulty</label>
               <input 
                 type="range" 
                 min="1" 
                 max="5" 
                 {...register('complexity', { valueAsNumber: true })}
               />
-              <span className={styles.rangeValue}>{watch('complexity')}</span>
+              <div className={styles.complexityDisplay}>
+                <span className={styles.stars}>{'⭐'.repeat(watch('complexity') || 3)}</span>
+                <span className={styles.complexityLabel}>
+                  {watch('complexity') === 1 && 'Very Easy (-50% time)'}
+                  {watch('complexity') === 2 && 'Easy (-25% time)'}
+                  {watch('complexity') === 3 && 'Normal (base time)'}
+                  {watch('complexity') === 4 && 'Hard (+50% time)'}
+                  {watch('complexity') === 5 && 'Very Hard (+100% time)'}
+                </span>
+              </div>
             </div>
           </div>
           

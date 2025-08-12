@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 import { Course, Task, TimeBlock, Event, UserPreferences } from '../types';
 import { addDays, startOfDay, endOfDay, isBefore, isAfter, differenceInDays, subDays, isSameDay } from 'date-fns';
+import { notificationService } from '../services/notificationService';
 
 interface ScheduleStore {
   courses: Course[];
@@ -75,7 +76,34 @@ const defaultPreferences: UserPreferences = {
   daysBeforeExam: 7,
   daysBeforeAssignment: 3,
   daysBeforeProject: 10,
-  hoursPerWorkDay: 3
+  daysBeforeReading: 2,
+  daysBeforeLab: 3,
+  hoursPerWorkDay: 3,
+  defaultHoursPerType: {
+    assignment: 3,
+    exam: 8,
+    project: 10,
+    reading: 2,
+    lab: 4
+  },
+  complexityMultipliers: {
+    1: 0.5,  // ⭐ Very Easy - quick review, -50% time
+    2: 0.75, // ⭐⭐ Easy - familiar material, -25% time  
+    3: 1.0,  // ⭐⭐⭐ Medium - standard difficulty, no adjustment (BASE TIME)
+    4: 1.5,  // ⭐⭐⭐⭐ Hard - complex/unfamiliar, +50% time
+    5: 2.0   // ⭐⭐⭐⭐⭐ Very Hard - many parts/very complex, +100% time
+  }
+};
+
+// Helper to ensure task data integrity
+const ensureTaskIntegrity = (task: any): Task => {
+  return {
+    ...task,
+    scheduledBlocks: Array.isArray(task.scheduledBlocks) ? task.scheduledBlocks : [],
+    dueDate: task.dueDate instanceof Date ? task.dueDate : new Date(task.dueDate),
+    bufferPercentage: task.bufferPercentage || 20,
+    status: task.status || 'not-started'
+  };
 };
 
 export const useScheduleStore = create<ScheduleStore>()(
@@ -152,17 +180,33 @@ export const useScheduleStore = create<ScheduleStore>()(
         if (taskData.estimatedHours && taskData.estimatedHours > 0) {
           get().scheduleTask(taskId);
         }
+        
+        // Schedule notifications for the new task
+        const updatedState = get();
+        notificationService.scheduleTaskNotifications(updatedState.tasks);
       },
       
-      updateTask: (id, task) => set((state) => ({
-        tasks: state.tasks.map((t) => (t.id === id ? { ...t, ...task } : t)),
-      })),
+      updateTask: (id, task) => {
+        set((state) => ({
+          tasks: state.tasks.map((t) => (t.id === id ? { ...t, ...task } : t)),
+        }));
+        
+        // Reschedule notifications after task update
+        const updatedState = get();
+        notificationService.scheduleTaskNotifications(updatedState.tasks);
+      },
       
-      deleteTask: (id) => set((state) => ({
-        tasks: state.tasks.filter((t) => t.id !== id),
-        timeBlocks: state.timeBlocks.filter((tb) => tb.taskId !== id),
-        events: state.events.filter((e) => e.taskId !== id),
-      })),
+      deleteTask: (id) => {
+        set((state) => ({
+          tasks: state.tasks.filter((t) => t.id !== id),
+          timeBlocks: state.timeBlocks.filter((tb) => tb.taskId !== id),
+          events: state.events.filter((e) => e.taskId !== id),
+        }));
+        
+        // Reschedule notifications after task deletion
+        const updatedState = get();
+        notificationService.scheduleTaskNotifications(updatedState.tasks);
+      },
       
       // TimeBlock actions
       addTimeBlock: (timeBlock) => set((state) => ({
@@ -221,18 +265,34 @@ export const useScheduleStore = create<ScheduleStore>()(
         }
         
         console.log(`Scheduling task: ${task.title}, estimated hours: ${task.estimatedHours}, buffer days: ${task.bufferDays}`);
+        console.log(`Task due date: ${task.dueDate}`);
+        
+        // Ensure dueDate is a proper Date object
+        const dueDate = task.dueDate instanceof Date ? task.dueDate : new Date(task.dueDate);
         
         // Calculate soft deadline (when work should be completed)
-        const softDeadline = subDays(task.dueDate, task.bufferDays || 0);
+        const softDeadline = subDays(dueDate, task.bufferDays || 0);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+        
+        console.log(`Today: ${today.toISOString()}, Due: ${dueDate.toISOString()}, Soft deadline: ${softDeadline.toISOString()}`);
+        
+        // Skip scheduling if the task is already past due
+        if (isBefore(dueDate, today)) {
+          console.log(`Task ${task.title} is past due, skipping scheduling`);
+          return;
+        }
         
         // Start date is either today or some days before soft deadline
         const idealStartDate = subDays(softDeadline, Math.ceil(task.estimatedHours / 2)); // Start early enough
         const startDate = isAfter(today, idealStartDate) ? today : idealStartDate;
         
+        // If soft deadline is in the past but due date is in future, start today
+        const effectiveStartDate = isAfter(today, softDeadline) ? today : startDate;
+        const effectiveDeadline = isAfter(today, softDeadline) ? dueDate : softDeadline;
+        
         // Calculate how many days we have to work
-        const daysAvailable = Math.max(1, differenceInDays(softDeadline, startDate));
+        const daysAvailable = Math.max(1, differenceInDays(effectiveDeadline, effectiveStartDate) + 1);
         const hoursPerDay = Math.min(
           task.estimatedHours / daysAvailable, 
           state.preferences.hoursPerWorkDay || 3 // Use preference or default to 3
@@ -242,10 +302,10 @@ export const useScheduleStore = create<ScheduleStore>()(
         
         // Create DO blocks (study/work time)
         let remainingHours = task.estimatedHours;
-        let currentDate = new Date(startDate);
+        let currentDate = new Date(effectiveStartDate);
         const newBlocks: TimeBlock[] = [];
         
-        while (remainingHours > 0 && isBefore(currentDate, softDeadline)) {
+        while (remainingHours > 0 && !isAfter(currentDate, effectiveDeadline)) {
           // Check if there are any events on this day that would conflict
           const dayEvents = state.events.filter(e => 
             isSameDay(e.startTime, currentDate) && 
@@ -259,6 +319,11 @@ export const useScheduleStore = create<ScheduleStore>()(
           }
           
           const hoursToday = Math.min(remainingHours, hoursPerDay);
+          
+          // Skip if less than 30 minutes remaining
+          if (hoursToday < 0.5) {
+            break;
+          }
           
           // Find best time slot based on preferences and conflicts
           let startHour = 14; // Default afternoon
@@ -346,6 +411,21 @@ export const useScheduleStore = create<ScheduleStore>()(
     }),
     {
       name: 'schedule-store',
+      version: 1,
+      migrate: (persistedState: any, version: number) => {
+        // Fix any corrupted task data during hydration
+        if (persistedState && persistedState.tasks) {
+          persistedState.tasks = persistedState.tasks.map((task: any) => ensureTaskIntegrity(task));
+        }
+        
+        // Ensure all arrays exist
+        persistedState.courses = persistedState.courses || [];
+        persistedState.timeBlocks = persistedState.timeBlocks || [];
+        persistedState.events = persistedState.events || [];
+        persistedState.preferences = persistedState.preferences || defaultPreferences;
+        
+        return persistedState;
+      },
     }
   )
 );

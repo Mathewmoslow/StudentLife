@@ -83,9 +83,13 @@ const TaskList: React.FC = () => {
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             padding: '0.75rem 1.5rem'
           }}
+          title="Advanced algorithmic scheduling with energy levels, preferences, and optimal time distribution"
         >
-          🧠 Smart Study Scheduler
+          🧠 Smart Study Scheduler (Advanced)
         </button>
+        <p style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '0.5rem' }}>
+          Uses advanced algorithms to optimize study times based on your energy patterns and preferences
+        </p>
       </div>
 
       <div className={styles.taskList}>

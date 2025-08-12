@@ -17,7 +17,13 @@ export interface Task {
   attachments?: string[];
   priority?: number;
   bufferDays?: number;
+  progress?: number; // 0-100 percentage
 }
+
+// Add CreateTaskData type for forms
+export type CreateTaskData = Omit<Task, 'id' | 'scheduledBlocks'> & {
+  scheduledBlocks?: TimeBlock[];
+};
 
 export interface TimeBlock {
   id: string;
@@ -58,8 +64,8 @@ export interface UserPreferences {
     start: string;
     end: string;
   };
-  breakDuration: number;
-  sessionDuration: number;
+  breakDuration: number; // minutes
+  sessionDuration: number; // minutes
   complexityDefaults: {
     assignment: number;
     exam: number;
@@ -68,12 +74,13 @@ export interface UserPreferences {
     lab: number;
   };
   bufferDefaults: {
-    soft: number;
+    soft: number; // percentage
     hard: number;
   };
   energyLevels: {
-    [hour: number]: number;
+    [hour: number]: number; // 0-1 energy level per hour
   };
+  hoursPerWorkDay?: number; // Hours per work day for scheduling
   studySessionDuration?: number;
   maxDailyStudyHours?: number;
   preferredStudyTimes?: {
@@ -87,7 +94,6 @@ export interface UserPreferences {
   daysBeforeProject?: number;
   daysBeforeReading?: number;
   daysBeforeLab?: number;
-  hoursPerWorkDay?: number;
   defaultHoursPerType?: {
     assignment: number;
     exam: number;

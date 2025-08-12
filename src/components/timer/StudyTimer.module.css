@@ -1,0 +1,306 @@
+.studyTimer {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.timerCard {
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.timerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.timerHeader h2 {
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.state {
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--color-primary);
+  color: white;
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  text-transform: capitalize;
+}
+
+.timerDisplay {
+  display: flex;
+  justify-content: center;
+  margin: var(--spacing-xl) 0;
+}
+
+.timeCircle {
+  position: relative;
+  width: 200px;
+  height: 200px;
+}
+
+.progressRing {
+  transform: rotate(-90deg);
+}
+
+.progressCircle {
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.timeText {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2.5rem;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+}
+
+.currentTask {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.currentTask h3 {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.currentTask p {
+  font-size: 1.1rem;
+  margin-bottom: var(--spacing-md);
+}
+
+.taskProgress {
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.taskProgressBar {
+  height: 100%;
+  background: var(--color-success);
+  transition: width 0.3s ease;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.primaryButton,
+.secondaryButton,
+.breakButton,
+.dangerButton,
+.cancelButton {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.primaryButton {
+  background: var(--color-primary);
+  color: white;
+}
+
+.primaryButton:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+}
+
+.secondaryButton {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.secondaryButton:hover {
+  background: var(--bg-tertiary);
+}
+
+.breakButton {
+  background: var(--color-success);
+  color: white;
+}
+
+.breakButton:hover {
+  opacity: 0.9;
+}
+
+.dangerButton {
+  background: var(--color-danger);
+  color: white;
+}
+
+.dangerButton:hover {
+  opacity: 0.9;
+}
+
+.cancelButton {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.cancelButton:hover {
+  background: var(--bg-secondary);
+}
+
+.breakMessage {
+  text-align: center;
+  padding: var(--spacing-lg);
+  background: #e8f5e9;
+  border-radius: var(--radius-md);
+  color: #2e7d32;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modalContent h3 {
+  margin-bottom: var(--spacing-lg);
+}
+
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.taskItem {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.taskItem:hover {
+  border-color: var(--color-primary);
+  transform: translateX(4px);
+}
+
+.taskInfo h4 {
+  margin-bottom: var(--spacing-xs);
+}
+
+.taskInfo p {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.progressFill {
+  height: 4px;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  transition: width 0.3s;
+}
+
+.formGroup {
+  margin-bottom: var(--spacing-lg);
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: var(--spacing-sm);
+  font-weight: 500;
+}
+
+.formGroup textarea {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  resize: vertical;
+}
+
+.productivityRating {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.ratingButton {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--border-color);
+  background: var(--bg-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.ratingButton:hover {
+  border-color: var(--color-primary);
+  transform: scale(1.1);
+}
+
+.ratingButton.selected {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.modalActions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .studyTimer {
+    max-width: 100%;
+  }
+  
+  .timeText {
+    font-size: 2rem;
+  }
+  
+  .controls {
+    flex-direction: column;
+  }
+}

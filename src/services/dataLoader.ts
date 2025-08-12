@@ -241,8 +241,7 @@ export class DataLoader {
       complexity,
       description: `${item.type} for ${item.course.replace('_', ' ')}`,
       isHardDeadline: true,
-      status: 'not-started',
-      scheduledBlocks: []
+      status: 'not-started'
     });
   }
   

@@ -13,6 +13,12 @@ const QuickAdd: React.FC = () => {
     
     if (!input.trim()) return;
     
+    // Check if courses exist
+    if (!courses || courses.length === 0) {
+      alert('Please add at least one course in Settings before adding tasks.');
+      return;
+    }
+    
     // Parse natural language input
     const parsedDate = chrono.parseDate(input);
     const dueDate = parsedDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // Default to 1 week
@@ -48,14 +54,13 @@ const QuickAdd: React.FC = () => {
     addTask({
       title: cleanTitle,
       type,
-      courseId: courses[0]?.id || '', // Default to first course
+      courseId: courses[0].id, // Safe now - we checked courses exist
       dueDate,
       complexity: 3 as const, // Explicitly type as literal
       estimatedHours: getEstimatedHours(type), // Auto-estimate based on type
       isHardDeadline: type === 'exam',
       bufferPercentage: type === 'exam' ? 10 : 20,
-      status: 'not-started',
-      scheduledBlocks: [] // Include required property
+      status: 'not-started'
     });
     
     setInput('');

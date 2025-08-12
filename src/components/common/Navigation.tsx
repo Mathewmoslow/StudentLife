@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import GlobalSearch from '../search/GlobalSearch';
 import styles from './Navigation.module.css';
 
 const Navigation: React.FC = () => {
@@ -8,6 +9,10 @@ const Navigation: React.FC = () => {
       <div className={styles.logo}>
         <span className={styles.logoIcon}>📚</span>
         <span className={styles.logoText}>StudentLife</span>
+      </div>
+      
+      <div className={styles.searchWrapper}>
+        <GlobalSearch />
       </div>
       
       <ul className={styles.navList}>

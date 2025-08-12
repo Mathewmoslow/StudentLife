@@ -29,6 +29,11 @@ const StudySchedulerModal: React.FC<StudySchedulerModalProps> = ({ isOpen, onClo
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [statistics, setStatistics] = useState<any>(null);
+  const [progress, setProgress] = useState<{
+    step: string;
+    percentage: number;
+    details: string;
+  }>({ step: '', percentage: 0, details: '' });
 
   // Update scheduler preferences when UI preferences change
   useEffect(() => {
@@ -55,23 +60,43 @@ const StudySchedulerModal: React.FC<StudySchedulerModalProps> = ({ isOpen, onClo
 
   if (!isOpen) return null;
 
-  const generateSchedule = () => {
+  const generateSchedule = async () => {
     setIsGenerating(true);
+    setProgress({ step: 'Analyzing tasks...', percentage: 10, details: 'Collecting incomplete tasks' });
+    
+    // Simulate processing time for better UX
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     // Get incomplete tasks and ensure scheduledBlocks types are correct
     const incompleteTasks = tasks
       .filter(t => t.status !== 'completed')
       .map(task => ({
         ...task,
-        scheduledBlocks: task.scheduledBlocks?.map(tb => ({
-          ...tb,
-          type: tb.type as "study" | "review" | "work"
-        })) ?? []
+        scheduledBlocks: Array.isArray(task.scheduledBlocks) 
+          ? task.scheduledBlocks.map(tb => ({
+              ...tb,
+              type: tb.type as "study" | "review" | "work"
+            }))
+          : []
       }));
+    
+    setProgress({ 
+      step: 'Analyzing schedule...', 
+      percentage: 25, 
+      details: `Found ${incompleteTasks.length} tasks to schedule` 
+    });
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     // Set date range
     const startDate = new Date();
     const endDate = new Date('2025-08-10'); // End of semester
+    
+    setProgress({ 
+      step: 'Checking conflicts...', 
+      percentage: 40, 
+      details: 'Analyzing existing events and time blocks' 
+    });
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     // Combine events and existing time blocks for scheduling
     const existingEvents = [
@@ -89,6 +114,13 @@ const StudySchedulerModal: React.FC<StudySchedulerModalProps> = ({ isOpen, onClo
       }))
     ];
     
+    setProgress({ 
+      step: 'Optimizing schedule...', 
+      percentage: 60, 
+      details: 'Calculating optimal study times based on energy levels' 
+    });
+    await new Promise(resolve => setTimeout(resolve, 700));
+    
     // Generate schedule
     const studyBlocks = scheduler.generateSchedule(
       incompleteTasks,
@@ -98,9 +130,23 @@ const StudySchedulerModal: React.FC<StudySchedulerModalProps> = ({ isOpen, onClo
       endDate
     );
     
+    setProgress({ 
+      step: 'Distributing workload...', 
+      percentage: 80, 
+      details: 'Balancing study sessions across days' 
+    });
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     // Get statistics
     const stats = scheduler.getStatistics();
     setStatistics(stats);
+    
+    setProgress({ 
+      step: 'Creating calendar blocks...', 
+      percentage: 90, 
+      details: 'Adding study sessions to your schedule' 
+    });
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     // Add generated study blocks to store
     const calendarBlocks = scheduler.exportForCalendar();
@@ -115,7 +161,15 @@ const StudySchedulerModal: React.FC<StudySchedulerModalProps> = ({ isOpen, onClo
       });
     });
     
+    setProgress({ 
+      step: 'Complete!', 
+      percentage: 100, 
+      details: `Created ${calendarBlocks.length} study blocks` 
+    });
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     setIsGenerating(false);
+    setProgress({ step: '', percentage: 0, details: '' });
     onClose();
   };
 
@@ -126,9 +180,25 @@ const StudySchedulerModal: React.FC<StudySchedulerModalProps> = ({ isOpen, onClo
     }));
   };
 
+  if (!isOpen) return null;
+  
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
+    <>
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 1; }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+          animation: spin 1s linear infinite;
+        }
+      `}</style>
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header" style={{ 
           backgroundColor: '#6366f1', 
           color: 'white', 
@@ -138,6 +208,9 @@ const StudySchedulerModal: React.FC<StudySchedulerModalProps> = ({ isOpen, onClo
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
             <Brain size={24} />
             Smart Study Scheduler
+            <span style={{ fontSize: '0.75rem', opacity: 0.9, marginLeft: '0.5rem' }}>
+              (Algorithmic Optimization)
+            </span>
           </h2>
           <button 
             onClick={onClose} 
@@ -159,8 +232,63 @@ const StudySchedulerModal: React.FC<StudySchedulerModalProps> = ({ isOpen, onClo
         </div>
 
         <div className="modal-body" style={{ padding: '1.5rem' }}>
+          {/* Progress Indicator */}
+          {isGenerating && (
+            <div style={{
+              marginBottom: '2rem',
+              padding: '1.5rem',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              borderRadius: '0.75rem',
+              color: 'white',
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
+            }}>
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                  {progress.step}
+                </div>
+                <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>
+                  {progress.details}
+                </div>
+              </div>
+              
+              {/* Progress Bar */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                borderRadius: '1rem',
+                height: '8px',
+                overflow: 'hidden',
+                position: 'relative'
+              }}>
+                <div style={{
+                  background: 'white',
+                  height: '100%',
+                  borderRadius: '1rem',
+                  width: `${progress.percentage}%`,
+                  transition: 'width 0.5s ease',
+                  boxShadow: '0 0 10px rgba(255, 255, 255, 0.5)'
+                }} />
+              </div>
+              
+              <div style={{ 
+                marginTop: '0.5rem', 
+                fontSize: '0.75rem', 
+                textAlign: 'right',
+                opacity: 0.9
+              }}>
+                {progress.percentage}%
+              </div>
+              
+              {/* Animated dots */}
+              <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '1.5rem' }}>
+                <span style={{ animation: 'pulse 1s infinite' }}>•</span>
+                <span style={{ animation: 'pulse 1s infinite 0.2s' }}>•</span>
+                <span style={{ animation: 'pulse 1s infinite 0.4s' }}>•</span>
+              </div>
+            </div>
+          )}
+
           {/* Time Preferences */}
-          <div className="preference-section" style={{ marginBottom: '1.5rem' }}>
+          <div className="preference-section" style={{ marginBottom: '1.5rem', opacity: isGenerating ? 0.5 : 1 }}>
             <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
               <Clock size={16} />
               Time Limits
@@ -348,6 +476,7 @@ const StudySchedulerModal: React.FC<StudySchedulerModalProps> = ({ isOpen, onClo
         </div>
       </div>
     </div>
+    </>
   );
 };
 

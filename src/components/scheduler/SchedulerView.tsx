@@ -70,6 +70,11 @@ const SchedulerView: React.FC = () => {
   };
   
   const getEventColor = (event: Event) => {
+    // Special colors for deadline events
+    if (event.type === 'deadline') {
+      return '#dc2626'; // Red for deadlines
+    }
+    
     const course = getCourseForEvent(event);
     if (course) return course.color;
     
@@ -145,6 +150,7 @@ const SchedulerView: React.FC = () => {
                       <div
                         key={event.id}
                         className={styles.eventBlock}
+                        data-type={event.type}
                         style={{
                           top: `${(startHour - 6) * 60}px`,
                           height: `${duration * 60 - 4}px`,
@@ -154,7 +160,9 @@ const SchedulerView: React.FC = () => {
                         title={`${event.title} - ${course?.name || 'Unknown Course'}`}
                       >
                         <div className={styles.blockContent}>
-                          <div className={styles.blockTitle}>{event.title}</div>
+                          <div className={styles.blockTitle}>
+                            {event.type === 'deadline' ? '⚠️ ' : ''}{event.title}
+                          </div>
                           <div className={styles.blockMeta}>
                             <span>{course?.code || 'N/A'}</span>
                             <span>{format(startTime, 'h:mm a')}</span>
@@ -184,10 +192,11 @@ const SchedulerView: React.FC = () => {
                         onClick={() => handleBlockClick(block)}
                       >
                         <div className={styles.blockContent}>
-                          <div className={styles.blockTitle}>📚 {task?.title || 'Study Session'}</div>
+                          <div className={styles.blockTitle}>✏️ DO: {task?.title || 'Study Session'}</div>
                           <div className={styles.blockTime}>
-                            {format(startTime, 'h:mm a')}
+                            {format(startTime, 'h:mm a')} - {format(endTime, 'h:mm a')}
                           </div>
+                          {block.completed && <div className={styles.blockCompleted}>✅ Completed</div>}
                         </div>
                       </div>
                     );
@@ -251,6 +260,7 @@ const SchedulerView: React.FC = () => {
                             onClick={() => handleEventClick(event)}
                             title={`${event.title} - ${course?.name || 'Unknown'}`}
                           >
+                            {event.type === 'deadline' ? '⚠️ ' : ''}
                             {format(startTime, 'h:mm')} {event.title}
                           </div>
                         );
@@ -262,8 +272,9 @@ const SchedulerView: React.FC = () => {
                             key={block.id} 
                             className={styles.monthStudyBlock}
                             onClick={() => handleBlockClick(block)}
+                            title={`DO: ${task?.title || 'Study Session'}`}
                           >
-                            📚 {task?.title || 'Study'}
+                            ✏️ DO: {task?.title || 'Study'}
                           </div>
                         );
                       })}

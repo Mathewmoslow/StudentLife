@@ -1,1 +1,1 @@
-export { StudyScheduler } from '../core/algorithms/studyScheduler';
+export { StudyScheduler } from '../algorithms/studyScheduler';

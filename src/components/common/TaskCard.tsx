@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Task } from '../../types';
 import { format, formatDistanceToNow } from 'date-fns';
+import { useScheduleStore } from '../../stores/useScheduleStore';
 import styles from './TaskCard.module.css';
 
 interface TaskCardProps {
@@ -8,10 +9,12 @@ interface TaskCardProps {
   isOverdue?: boolean;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, isOverdue = false }) => {
+const TaskCard: React.FC<TaskCardProps> = memo(({ task, isOverdue = false }) => {
+  const { courses } = useScheduleStore();
+  
   const getCourseInfo = () => {
-    // In a real app, this would look up the course
-    return 'CS 101';
+    const course = courses.find(c => c.id === task.courseId);
+    return course?.name || 'Unknown Course';
   };
   
   const getComplexityLabel = () => {
@@ -52,7 +55,9 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, isOverdue = false }) => {
         <div 
           className={styles.progressBar} 
           style={{ 
-            width: `${(task.scheduledBlocks.filter(b => b.completed).length / task.scheduledBlocks.length) * 100 || 0}%` 
+            width: `${task.scheduledBlocks && task.scheduledBlocks.length > 0 
+              ? (task.scheduledBlocks.filter(b => b.completed).length / task.scheduledBlocks.length) * 100 
+              : 0}%` 
           }}
         />
       </div>
@@ -63,6 +68,8 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, isOverdue = false }) => {
       </div>
     </div>
   );
-};
+});
+
+TaskCard.displayName = 'TaskCard';
 
 export default TaskCard;
