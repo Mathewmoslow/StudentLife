@@ -100,3 +100,25 @@
 .navList a.active::before {
   opacity: 1;
 }
+
+.importHighlight {
+  background: linear-gradient(135deg, #667eea, #764ba2) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  animation: pulse 2s infinite;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.importHighlight:hover {
+  transform: translateX(4px) scale(1.05) !important;
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}

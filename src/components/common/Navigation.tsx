@@ -1,9 +1,14 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import GlobalSearch from '../search/GlobalSearch';
+import { useScheduleStore } from '../../stores/useScheduleStore';
 import styles from './Navigation.module.css';
 
 const Navigation: React.FC = () => {
+  const { courses, tasks } = useScheduleStore();
+  const hasCourses = courses.length > 0;
+  const isEmpty = courses.length === 0 && tasks.length === 0;
+
   return (
     <nav className={styles.nav}>
       <div className={styles.logo}>
@@ -24,6 +29,17 @@ const Navigation: React.FC = () => {
             Dashboard
           </NavLink>
         </li>
+        {isEmpty && (
+          <li>
+            <NavLink 
+              to="/canvas-import" 
+              className={styles.importHighlight}
+            >
+              <span style={{ marginRight: '4px' }}>🚀</span>
+              Import Courses
+            </NavLink>
+          </li>
+        )}
         <li>
           <NavLink 
             to="/timeline" 

@@ -147,16 +147,52 @@ const Dashboard: React.FC = () => {
           padding: '20px',
           marginBottom: '20px'
         }}>
-          <h2 style={{ color: '#1e40af', marginTop: 0 }}>🎓 Getting Started</h2>
-          <ol style={{ marginLeft: '20px', color: '#1e40af' }}>
-            <li>Go to <strong>Settings</strong> to add your courses</li>
-            <li>Use the <strong>Quick Add</strong> box above to add your first task</li>
-            <li>Or go to <strong>Tasks</strong> to add detailed assignments</li>
-            <li>Visit <strong>Schedule</strong> to see your timeline</li>
-          </ol>
-          <p style={{ marginTop: '15px', color: '#64748b' }}>
-            💡 <em>Tip: Load sample data in Settings to explore the app with example content!</em>
+          <h2 style={{ color: '#1e40af', marginTop: 0 }}>📚 No Courses Yet!</h2>
+          <p style={{ fontSize: '1.1rem', color: '#1e40af', marginBottom: '1.5rem' }}>
+            It looks like you haven't imported any courses yet. Let's fix that!
           </p>
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+            <button 
+              onClick={() => window.location.href = '/canvas-import'}
+              style={{
+                background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                color: 'white',
+                border: 'none',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)'
+              }}
+            >
+              🚀 Import from Canvas
+            </button>
+            <button 
+              onClick={() => window.location.href = '/settings'}
+              style={{
+                background: 'white',
+                color: '#667eea',
+                border: '2px solid #667eea',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                fontWeight: '600',
+                cursor: 'pointer'
+              }}
+            >
+              ⚙️ Manual Setup
+            </button>
+          </div>
+          <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#e0f2fe', borderRadius: '6px' }}>
+            <h3 style={{ color: '#0369a1', marginTop: 0, fontSize: '1rem' }}>Quick Start Guide:</h3>
+            <ol style={{ marginLeft: '20px', color: '#0369a1', margin: '0.5rem 0 0 1.5rem' }}>
+              <li>Click "Import from Canvas" above</li>
+              <li>Add your course information</li>
+              <li>Paste your syllabus (we'll extract all tasks automatically!)</li>
+              <li>Review and import - done!</li>
+            </ol>
+          </div>
         </div>
       )}
       

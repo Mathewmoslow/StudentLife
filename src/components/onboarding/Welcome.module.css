@@ -1,0 +1,236 @@
+.welcomeContainer {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+}
+
+.hero {
+  text-align: center;
+  color: white;
+  margin-bottom: 3rem;
+  animation: fadeIn 0.8s ease-in;
+}
+
+.title {
+  font-size: 3.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.subtitle {
+  font-size: 1.5rem;
+  opacity: 0.95;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.mainContent {
+  background: white;
+  border-radius: 20px;
+  padding: 3rem;
+  max-width: 900px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.problemSection {
+  margin-bottom: 3rem;
+}
+
+.problemSection h2 {
+  color: #333;
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.painPoints {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.painPoint {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 12px;
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.painPoint:hover {
+  transform: translateY(-5px);
+  background: #f1f3f5;
+}
+
+.emoji {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.painPoint p {
+  color: #555;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.solutionSection {
+  margin-bottom: 3rem;
+}
+
+.solutionSection h2 {
+  color: #333;
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.step:hover {
+  background: linear-gradient(135deg, #667eea15, #764ba215);
+  transform: translateX(10px);
+}
+
+.stepNumber {
+  min-width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.stepContent h3 {
+  color: #333;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+}
+
+.stepContent p {
+  color: #666;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.ctaSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  margin: 3rem 0;
+}
+
+.primaryButton {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  padding: 1.25rem 2.5rem;
+  font-size: 1.25rem;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.primaryButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(102, 126, 234, 0.5);
+}
+
+.secondaryButton {
+  background: transparent;
+  color: #667eea;
+  border: 2px solid #667eea;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.secondaryButton:hover {
+  background: #667eea;
+  color: white;
+}
+
+.features {
+  background: linear-gradient(135deg, #667eea15, #764ba215);
+  padding: 2rem;
+  border-radius: 12px;
+  margin-top: 2rem;
+}
+
+.features h3 {
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.features ul {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0.75rem;
+}
+
+.features li {
+  color: #555;
+  font-size: 1rem;
+  padding: 0.5rem 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .title {
+    font-size: 2.5rem;
+  }
+  
+  .subtitle {
+    font-size: 1.25rem;
+  }
+  
+  .mainContent {
+    padding: 2rem;
+  }
+  
+  .painPoints {
+    grid-template-columns: 1fr;
+  }
+}
