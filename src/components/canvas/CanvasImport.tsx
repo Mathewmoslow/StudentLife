@@ -41,9 +41,10 @@ const CanvasImport: React.FC = () => {
     }
 
     const newCourse = {
-      id: `course_${Date.now()}`,
       name: courseName,
-      instructor: instructorName || 'TBD',
+      code: courseName.split('-')[0]?.trim() || 'COURSE',
+      professor: instructorName || 'TBD',
+      schedule: [],
       color: `#${Math.floor(Math.random()*16777215).toString(16)}`,
       credits: 3
     };
