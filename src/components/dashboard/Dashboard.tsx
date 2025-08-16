@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useScheduleStore } from '../../stores/useScheduleStore';
 import { format } from 'date-fns';
 import TaskCard from '../common/TaskCard';
@@ -98,6 +99,7 @@ export const DebugScheduling: React.FC = () => {
 };
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { tasks, courses } = useScheduleStore();
   const [showDebug, setShowDebug] = useState(false);
   
@@ -153,7 +155,7 @@ const Dashboard: React.FC = () => {
           </p>
           <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
             <button 
-              onClick={() => window.location.href = '/canvas-import'}
+              onClick={() => navigate('/canvas-import')}
               style={{
                 background: 'linear-gradient(135deg, #667eea, #764ba2)',
                 color: 'white',
@@ -169,7 +171,7 @@ const Dashboard: React.FC = () => {
               🚀 Import from Canvas
             </button>
             <button 
-              onClick={() => window.location.href = '/settings'}
+              onClick={() => navigate('/settings')}
               style={{
                 background: 'white',
                 color: '#667eea',

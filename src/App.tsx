@@ -18,6 +18,15 @@ function AppContent() {
   const [isFirstTimeUser, setIsFirstTimeUser] = useState<boolean | null>(null);
   
   useEffect(() => {
+    // For development: always show welcome if URL param is set
+    const urlParams = new URLSearchParams(window.location.search);
+    const forceWelcome = urlParams.get('welcome') === 'true';
+    
+    if (forceWelcome) {
+      setIsFirstTimeUser(true);
+      return;
+    }
+    
     const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
     const hasData = tasks.length > 0 || courses.length > 0;
     setIsFirstTimeUser(!hasSeenWelcome && !hasData);
@@ -56,7 +65,7 @@ function AppContent() {
 function App() {
   return (
     <ErrorBoundary>
-      <Router>
+      <Router basename="/StudentLife">
         <AppContent />
       </Router>
     </ErrorBoundary>
