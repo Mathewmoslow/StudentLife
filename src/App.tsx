@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import Box from '@mui/material/Box';
+import { theme } from './theme/theme';
 import ErrorBoundary from './components/ErrorBoundary';
 import Welcome from './components/onboarding/Welcome';
 import CanvasImport from './components/canvas/CanvasImport';
@@ -10,7 +14,6 @@ import TaskList from './components/tasks/TaskList';
 import Settings from './components/settings/Settings';
 import Navigation from './components/common/Navigation';
 import { useScheduleStore } from './stores/useScheduleStore';
-import './styles/global.css';
 
 function AppContent() {
   const location = useLocation();
@@ -38,13 +41,20 @@ function AppContent() {
                          location.pathname === '/canvas-import';
 
   if (isFirstTimeUser === null) {
-    return <div>Loading...</div>;
+    return <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">Loading...</Box>;
   }
 
   return (
-    <div className="app">
+    <Box display="flex" minHeight="100vh" bgcolor="background.default">
       {!hideNavigation && <Navigation />}
-      <main className="main-content">
+      <Box 
+        component="main" 
+        flexGrow={1}
+        sx={{ 
+          marginLeft: hideNavigation ? 0 : '240px',
+          transition: 'margin-left 0.3s ease'
+        }}
+      >
         <Routes>
           <Route path="/" element={
             isFirstTimeUser ? <Welcome /> : <Navigate to="/dashboard" replace />
@@ -57,20 +67,21 @@ function AppContent() {
           <Route path="/tasks" element={<TaskList />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>
-      </main>
-    </div>
+      </Box>
+    </Box>
   );
 }
 
 function App() {
-  // Remove basename for Vercel (deployed at root)
-  // For GitHub Pages, use: basename="/StudentLife"
   return (
-    <ErrorBoundary>
-      <Router>
-        <AppContent />
-      </Router>
-    </ErrorBoundary>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <ErrorBoundary>
+        <Router>
+          <AppContent />
+        </Router>
+      </ErrorBoundary>
+    </ThemeProvider>
   );
 }
 
