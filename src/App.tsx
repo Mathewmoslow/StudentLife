@@ -63,9 +63,11 @@ function AppContent() {
 }
 
 function App() {
+  // Remove basename for Vercel (deployed at root)
+  // For GitHub Pages, use: basename="/StudentLife"
   return (
     <ErrorBoundary>
-      <Router basename="/StudentLife">
+      <Router>
         <AppContent />
       </Router>
     </ErrorBoundary>
